@@ -302,6 +302,54 @@ const apiService = {
         }
     },
 
+    // --- Image API Calls ---
+
+    /**
+     * Uploads an image for a specific property.
+     * @param {string} propertyId - The UUID of the property.
+     * @param {File} file - The image file object.
+     * @param {boolean} [isPrimary=false] - Whether this should be the primary image.
+     * @returns {Promise<object>} - The created PropertyImage data.
+     */
+    uploadPropertyImage: async (propertyId, file, isPrimary = false) => {
+        const formData = new FormData();
+        formData.append('image', file); // Key 'image' must match backend expectation
+        // Optional: Send is_primary flag if backend supports it via form data or query param
+        // formData.append('is_primary', isPrimary);
+        // Or use query param: const config = { params: { primary: isPrimary } };
+
+        console.log(`Uploading image for property ${propertyId}`);
+        try {
+            const response = await apiClient.post(`/properties/${propertyId}/images`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data', // Important for file uploads
+                },
+                // params: { primary: isPrimary } // Example if using query param
+            });
+            console.log('Upload image response:', response.data);
+            return response.data; // Should be PropertyImageResponse
+        } catch (error) {
+            console.error(`Upload Image API error (Property ID: ${propertyId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to upload image');
+        }
+    },
+
+    /**
+     * Deletes a specific property image.
+     * @param {string} imageId - The UUID of the image record to delete.
+     * @returns {Promise<void>} - Resolves on success (204), throws on error.
+     */
+    deletePropertyImage: async (imageId) => {
+        console.log(`Deleting image ID: ${imageId}`);
+        try {
+            await apiClient.delete(`/properties/images/${imageId}`);
+            console.log(`Image ${imageId} deleted successfully.`);
+        } catch (error) {
+            console.error(`Delete Image API error (Image ID: ${imageId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to delete image');
+        }
+    },
+
 };
 
 export default apiService;

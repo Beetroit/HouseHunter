@@ -13,6 +13,7 @@ from quart_schema import (
     ResponseSchemaValidationError,
 )
 from services.exceptions import ServiceException
+from services.storage import get_storage_manager  # Import storage manager factory
 
 
 # --- Application Factory ---
@@ -54,40 +55,55 @@ def create_app(config_name=None):
     # You might add a check here or a startup task if needed
     # from services.database import init_db
     # @app.before_serving
-    # async def startup():
+    # async def startup_db(): # Renamed for clarity
     #     if config.QUART_ENV == 'development': # Example: only init in dev if needed
     #         await init_db()
 
-    # --- Redis Broker Setup ---
+    # --- Redis Broker & Storage Manager Setup ---
     @app.before_serving
-    async def startup_redis():
+    async def startup_services():
+        # Redis Setup
         app.logger.info("Connecting to Redis...")
         try:
-            # Create pool or client connection
-            # Using client here for simplicity, pool might be better for high concurrency
             app.redis_broker = await redis.from_url(
-                config.REDIS_URL,
-                decode_responses=True,  # Decode responses to strings
+                config.REDIS_URL, decode_responses=True
             )
-            # Test connection
             await app.redis_broker.ping()
             app.logger.info("Successfully connected to Redis.")
         except Exception as e:
             app.logger.error(f"Failed to connect to Redis: {e}", exc_info=True)
-            # Depending on requirements, you might want to raise the error
-            # or allow the app to start without Redis (graceful degradation)
-            app.redis_broker = None  # Ensure it's None if connection failed
+            app.redis_broker = None  # Allow app to start without Redis?
+
+        # Storage Manager Setup
+        app.logger.info("Initializing storage manager...")
+        try:
+            # Pass the config object to the factory function
+            app.storage_manager = get_storage_manager(config)
+            app.logger.info(
+                f"Storage manager initialized: {type(app.storage_manager).__name__}"
+            )
+            # If using Azure, might want to ensure container exists here
+            # if isinstance(app.storage_manager, AzureBlobStorage):
+            #     await app.storage_manager._create_container_if_not_exists()
+        except Exception as e:
+            app.logger.error(
+                f"Failed to initialize storage manager: {e}", exc_info=True
+            )
+            app.storage_manager = None  # Allow app to start? Or raise?
 
     @app.after_serving
-    async def shutdown_redis():
+    async def shutdown_services():
+        # Redis Shutdown
         if hasattr(app, "redis_broker") and app.redis_broker:
             app.logger.info("Closing Redis connection...")
             try:
                 await app.redis_broker.close()
-                # await app.redis_broker.wait_closed() # Use if using connection pool
                 app.logger.info("Redis connection closed.")
             except Exception as e:
                 app.logger.error(f"Error closing Redis connection: {e}", exc_info=True)
+        # Add shutdown logic for storage manager if needed (e.g., closing clients)
+        # if hasattr(app, "storage_manager") and hasattr(app.storage_manager, "close"):
+        #     await app.storage_manager.close()
 
     # --- Error Handlers ---
     @app.errorhandler(404)
@@ -162,6 +178,7 @@ def create_app(config_name=None):
     @app.route("/health")
     async def health_check():
         """Simple health check endpoint."""
+        # Could add checks for DB, Redis, Storage here later
         return jsonify({"status": "ok"}), 200
 
     return app

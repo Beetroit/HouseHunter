@@ -20,6 +20,8 @@ alembic = "^1.15.2"
 rich = "^14.0.0"
 passlib = "^1.7.4"
 redis = {extras = ["hiredis"], version = "^5.2.1"}
+azure-storage-blob = "^12.25.1"
+azure-identity = "^1.21.0"
 
 
 [build-system]

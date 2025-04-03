@@ -4,18 +4,21 @@ from typing import Optional  # Add Optional import
 from models.property import (
     CreatePropertyRequest,
     PaginatedPropertyResponse,
+    PropertyImageResponse,  # Import PropertyImageResponse
     PropertyResponse,
     UpdatePropertyRequest,
 )
 from models.user import User  # Import User for type hinting
 from pydantic import BaseModel, Field  # For query parameters model
-from quart import Blueprint, current_app
+from quart import Blueprint, current_app, request  # Import request
 from quart_auth import auth_required, current_user
 from quart_schema import validate_querystring, validate_request, validate_response
 from services.database import get_session
 from services.exceptions import (
-    InvalidRequestException,  # Add InvalidRequestException import
+    FileNotAllowedException,  # Import FileNotAllowedException
+    InvalidRequestException,
     PropertyNotFoundException,
+    StorageException,  # Import StorageException
     UnauthorizedException,
     UserNotFoundException,
 )
@@ -223,3 +226,93 @@ async def delete_property(property_id: uuid.UUID):
             await db_session.rollback()
             current_app.logger.error(f"Error deleting property {property_id}: {e}")
             raise ValueError("Failed to delete property due to an unexpected error.")
+
+
+# --- Image Upload/Delete Routes ---
+
+
+@bp.route("/<uuid:property_id>/images", methods=["POST"])
+@auth_required
+@validate_response(PropertyImageResponse, status_code=201)
+async def upload_property_image(property_id: uuid.UUID):
+    """Upload an image for a specific property."""
+    requesting_user = await get_current_user_object()
+    files = await request.files
+    image_file = files.get("image")  # Assuming file input name is 'image'
+
+    if not image_file:
+        raise InvalidRequestException("No image file found in the request.")
+
+    # TODO: Consider adding is_primary flag handling, maybe via query param or form data?
+    # is_primary = request.args.get('primary', 'false').lower() == 'true'
+    is_primary = False  # Default to false for now
+
+    async with get_session() as db_session:
+        property_service = PropertyService(db_session)
+        try:
+            new_image = await property_service.add_image_to_property(
+                property_id=property_id,
+                image_file=image_file,
+                requesting_user=requesting_user,
+                is_primary=is_primary,
+            )
+            await db_session.commit()
+            current_app.logger.info(
+                f"Image {new_image.id} uploaded for property {property_id} by user {requesting_user.id}"
+            )
+            return new_image, 201
+        except (
+            PropertyNotFoundException,
+            UnauthorizedException,
+            FileNotAllowedException,
+            StorageException,
+            InvalidRequestException,
+        ) as e:
+            await db_session.rollback()
+            raise e  # Let global handler manage specific errors
+        except Exception as e:
+            await db_session.rollback()
+            current_app.logger.error(
+                f"Error uploading image for property {property_id}: {e}", exc_info=True
+            )
+            raise StorageException("Failed to upload image due to an unexpected error.")
+
+
+@bp.route("/images/<uuid:image_id>", methods=["DELETE"])
+@auth_required
+@validate_response(status_code=204)  # No content on success
+async def delete_property_image(image_id: uuid.UUID):
+    """Delete a specific property image."""
+    requesting_user = await get_current_user_object()
+
+    async with get_session() as db_session:
+        property_service = PropertyService(db_session)
+        try:
+            success = await property_service.delete_image_from_property(
+                image_id=image_id, requesting_user=requesting_user
+            )
+            if success:
+                await db_session.commit()
+                current_app.logger.info(
+                    f"Image {image_id} deleted by user {requesting_user.id}"
+                )
+                return "", 204
+            else:
+                # Service layer handles logging if image not found, return 404?
+                # Or just let it be 204 even if not found (idempotent delete)
+                # For now, assume service returns False if not found/deleted.
+                # Let's return 404 if service indicated it wasn't found.
+                # This requires adjusting the service method slightly or handling here.
+                # Re-evaluating: Let's keep it simple, 204 is fine even if already deleted.
+                # If service raised PropertyNotFound for the *image*, handle that.
+                return "", 204  # Assume success or already gone
+
+        except (UnauthorizedException, StorageException) as e:
+            await db_session.rollback()
+            raise e  # Let global handler manage specific errors
+        except Exception as e:
+            await db_session.rollback()
+            current_app.logger.error(
+                f"Error deleting image {image_id}: {e}", exc_info=True
+            )
+            raise StorageException("Failed to delete image due to an unexpected error.")

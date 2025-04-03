@@ -71,6 +71,24 @@ class InvalidRequestException(ServiceException):
         super().__init__(message, status_code)
 
 
+class StorageException(ServiceException):
+    """Base exception for storage related errors."""
+
+    def __init__(
+        self, message: str = "Storage operation failed", status_code: int = 500
+    ):  # Default to 500 for storage issues
+        super().__init__(message, status_code)
+
+
+class FileNotAllowedException(StorageException):
+    """Raised when an uploaded file type is not allowed."""
+
+    def __init__(
+        self, message: str = "File type not allowed", status_code: int = 400
+    ):  # 400 Bad Request for invalid file type
+        super().__init__(message, status_code)
+
+
 class ChatNotFoundException(ServiceException):
     """Raised when a chat session is not found."""
 

@@ -3,9 +3,10 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl  # Import HttpUrl
 from sqlalchemy import (
     Boolean,
+    DateTime,  # Import DateTime
     Float,
     ForeignKey,
     Integer,
@@ -24,6 +25,7 @@ from api.models.base import Base
 from api.models.user import UserResponse
 
 if TYPE_CHECKING:
+    from api.models.chat import Chat  # Add Chat import for relationship
     from api.models.user import User
 
 
@@ -44,7 +46,38 @@ class PropertyStatus(str, Enum):
     UNLISTED = "unlisted"  # Temporarily hidden by owner
 
 
-# --- SQLAlchemy Model ---
+# --- SQLAlchemy Models ---
+
+
+class PropertyImage(Base):
+    """Represents an image associated with a property."""
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True, index=True, default=uuid.uuid4
+    )
+    property_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("properties.id", name="fk_property_images_property_id_properties"),
+        index=True,
+        nullable=False,
+    )
+    image_url: Mapped[str] = mapped_column(
+        String(512), nullable=False
+    )  # URL from storage
+    filename: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )  # Filename in storage (for deletion)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    # Relationship back to Property
+    property: Mapped["Property"] = relationship("Property", back_populates="images")
+
+    def __repr__(self):
+        return f"<PropertyImage(id={self.id}, property_id={self.property_id}, url='{self.image_url[:30]}...')>"
+
+
 class Property(Base):
     """SQLAlchemy model for property listings."""
 
@@ -86,20 +119,30 @@ class Property(Base):
     bedrooms: Mapped[Optional[int]] = mapped_column(Integer)
     bathrooms: Mapped[Optional[int]] = mapped_column(Integer)
     square_feet: Mapped[Optional[int]] = mapped_column(Integer)
-    # image_urls: Mapped[Optional[List[str]]] = mapped_column(JSON) # Or a separate Image table
 
     is_promoted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     promotion_expires_at: Mapped[Optional[datetime]] = mapped_column(index=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), nullable=False
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,  # Use timezone aware
     )
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,  # Use timezone aware
     )
-    verified_at: Mapped[Optional[datetime]] = mapped_column()
-    rejected_at: Mapped[Optional[datetime]] = mapped_column()
-    rented_at: Mapped[Optional[datetime]] = mapped_column()
+    verified_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True)
+    )  # Use timezone aware
+    rejected_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True)
+    )  # Use timezone aware
+    rented_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True)
+    )  # Use timezone aware
 
     # Relationships
     lister: Mapped["User"] = relationship(
@@ -114,11 +157,29 @@ class Property(Base):
         back_populates="owned_properties",
         lazy="selectin",
     )  # type: ignore[name-defined] # New relationship for owner
-    # images: Mapped[List["PropertyImage"]] = relationship("PropertyImage", back_populates="property", cascade="all, delete-orphan")
-    # chats: Mapped[List["Chat"]] = relationship("Chat", back_populates="property")
+    images: Mapped[List["PropertyImage"]] = relationship(
+        "PropertyImage",
+        back_populates="property",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="PropertyImage.uploaded_at",  # Order images by upload time
+    )
+    chats: Mapped[List["Chat"]] = relationship(
+        "Chat", back_populates="property", lazy="selectin"
+    )  # type: ignore[name-defined]
 
 
 # --- Pydantic Schemas ---
+
+
+# Schema for Property Image response
+class PropertyImageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    image_url: HttpUrl  # Validate as URL
+    is_primary: bool
+    uploaded_at: datetime
 
 
 class PropertyBase(BaseModel):
@@ -143,7 +204,6 @@ class PropertyBase(BaseModel):
     bedrooms: Optional[int] = Field(None, ge=0, example=2)
     bathrooms: Optional[int] = Field(None, ge=0, example=1)
     square_feet: Optional[int] = Field(None, ge=0, example=900)
-    # image_urls: Optional[List[HttpUrl]] = Field(None, example=["http://example.com/image1.jpg"])
 
 
 class CreatePropertyRequest(PropertyBase):
@@ -165,7 +225,6 @@ class UpdatePropertyRequest(BaseModel):
     bedrooms: Optional[int] = Field(None, ge=0)
     bathrooms: Optional[int] = Field(None, ge=0)
     square_feet: Optional[int] = Field(None, ge=0)
-    # image_urls: Optional[List[HttpUrl]] = None
     status: Optional[PropertyStatus] = (
         None  # Allow owner to unlist/relist? Or only admin changes?
     )
@@ -178,7 +237,6 @@ class PropertyResponse(PropertyBase):
     # owner_id is inherited from PropertyBase
 
     id: uuid.UUID
-    # Remove duplicate owner_id from here, it's in PropertyBase
     status: PropertyStatus
     is_promoted: bool
     promotion_expires_at: Optional[datetime] = None
@@ -187,6 +245,7 @@ class PropertyResponse(PropertyBase):
     verified_at: Optional[datetime] = None
     lister: UserResponse  # Embed info about the user who listed it
     owner: UserResponse  # Embed info about the actual owner
+    images: List[PropertyImageResponse] = []  # Add images list
 
 
 class PaginatedPropertyResponse(BaseModel):

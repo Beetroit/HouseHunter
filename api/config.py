@@ -53,6 +53,19 @@ class Config:
     # Redis configuration
     REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
+    # File Upload Configuration
+    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(basedir, "uploads"))
+    # Azure Storage (Optional)
+    AZURE_STORAGE_CONNECTION_STRING = os.environ.get(
+        "AZURE_STORAGE_CONNECTION_STRING", None
+    )
+    AZURE_STORAGE_CONTAINER_NAME = os.environ.get(
+        "AZURE_STORAGE_CONTAINER_NAME", "property-images"
+    )
+    # Consider adding allowed extensions and max size
+    # ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    # MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB limit
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""
@@ -97,6 +110,11 @@ class ProductionConfig(Config):
     REDIS_URL = os.environ.get("REDIS_URL", None)
     if REDIS_URL is None:
         raise ValueError("No REDIS_URL set for production environment")
+
+    # Production might require Azure Storage or a persistent UPLOAD_FOLDER
+    # If using Azure, ensure AZURE_STORAGE_CONNECTION_STRING is set
+    # if AZURE_STORAGE_CONNECTION_STRING is None:
+    #     raise ValueError("No AZURE_STORAGE_CONNECTION_STRING set for production environment")
 
 
 # Dictionary to easily select config based on environment variable

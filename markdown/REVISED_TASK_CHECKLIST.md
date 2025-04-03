@@ -162,7 +162,8 @@
     *   [x] User Profiles (including Agent profiles with reputation)
         *   *Summary (2025-04-03):* Added profile fields to User model/schemas. Implemented UserService method. Created backend routes (/users/me, /users/{id}/profile). Added frontend API calls, UserProfilePage, EditProfilePage, and routing/navigation.
     *   [ ] Notifications (In-app/Email)
-    *   [ ] Image Uploads
+    *   [x] Image Uploads
+        *   *Summary (2025-04-03):* Implemented backend storage abstraction (Local/Azure), PropertyImage model, service methods, and routes. Implemented frontend API calls and UI for upload/delete/display in EditListingPage and ListingDetailPage.
     *   [ ] Map Integration (Google Maps)
     *   [ ] Saved Listings/Favorites
     *   [ ] Reviews/Ratings (for Agents/Properties)

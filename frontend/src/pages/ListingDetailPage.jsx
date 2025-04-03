@@ -57,6 +57,25 @@ function ListingDetailPage() {
     return (
         <div className="listing-detail-container">
             <h2>{listing.title}</h2>
+
+            {/* Image Display Section */}
+            <div className="listing-images" style={{ marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
+                {listing.images && listing.images.length > 0 ? (
+                    <div style={{ display: 'flex', overflowX: 'auto', gap: '10px', padding: '5px' }}>
+                        {listing.images.map(img => (
+                            <img
+                                key={img.id}
+                                src={img.image_url}
+                                alt={`Property image ${img.id}`}
+                                style={{ height: '150px', width: 'auto', objectFit: 'cover', border: '1px solid #ddd' }}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <p>No images available for this listing.</p>
+                )}
+            </div>
+
             {/* TODO: Add image gallery here */}
             <p><strong>Type:</strong> {listing.property_type}</p>
             <p><strong>Status:</strong> {listing.status}</p>

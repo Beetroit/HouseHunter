@@ -4,7 +4,7 @@ from models.property import PaginatedPropertyResponse, PropertyResponse, Propert
 from pydantic import BaseModel, Field  # For query parameters
 from quart import Blueprint, current_app
 from quart_auth import current_user  # Import current_user
-from quart_schema import validate_querystring, validate_response
+from quart_schema import tag, validate_querystring, validate_response
 from services.database import get_session
 from services.exceptions import PropertyNotFoundException
 from services.property_service import PropertyService
@@ -27,6 +27,7 @@ class ListPendingQueryArgs(BaseModel):
 @admin_required  # Ensure only admins can access
 @validate_querystring(ListPendingQueryArgs)
 @validate_response(PaginatedPropertyResponse, status_code=200)
+@tag(["ADMIN"])
 async def list_pending_properties(
     query_args: ListPendingQueryArgs,
 ) -> PaginatedPropertyResponse:
@@ -55,6 +56,7 @@ async def list_pending_properties(
 @bp.route("/properties/<uuid:property_id>/verify", methods=["POST"])
 @admin_required
 @validate_response(PropertyResponse, status_code=200)
+@tag(["ADMIN"])
 async def verify_property(property_id: uuid.UUID) -> PropertyResponse:
     """Verify a property listing."""
     async with get_session() as db_session:
@@ -77,6 +79,7 @@ async def verify_property(property_id: uuid.UUID) -> PropertyResponse:
 
 @bp.route("/properties/<uuid:property_id>/reject", methods=["POST"])
 @admin_required
+@tag(["ADMIN"])
 @validate_response(PropertyResponse, status_code=200)
 async def reject_property(property_id: uuid.UUID) -> PropertyResponse:
     """Reject a property listing."""

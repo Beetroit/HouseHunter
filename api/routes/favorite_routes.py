@@ -1,19 +1,18 @@
 from typing import List
 
+from models.base import ErrorResponse
+from models.property import PropertyResponse
 from quart import Blueprint
 from quart_auth import current_user, login_required
-from quart_schema import validate_response
-
-from api.models.base import ErrorResponse
-from api.models.property import PropertyResponse
-from api.services.database import get_session
-from api.services.exceptions import (
+from quart_schema import tag, validate_response
+from services.database import get_session
+from services.exceptions import (
     FavoriteAlreadyExistsException,
     FavoriteNotFoundException,
     PropertyNotFoundException,
     ServiceException,
 )
-from api.services.favorite_service import FavoriteService
+from services.favorite_service import FavoriteService
 
 bp = Blueprint("favorite_routes", __name__, url_prefix="/api")
 
@@ -23,6 +22,7 @@ bp = Blueprint("favorite_routes", __name__, url_prefix="/api")
 @validate_response(ErrorResponse, status_code=404)  # For PropertyNotFound
 @validate_response(ErrorResponse, status_code=409)  # For FavoriteAlreadyExists
 @validate_response(ErrorResponse, status_code=500)  # For general ServiceException
+@tag(["Favorite"])
 async def add_favorite(property_id: int):
     """Adds a property to the current user's favorites."""
     user = await current_user.get_user()
@@ -51,6 +51,7 @@ async def add_favorite(property_id: int):
     ErrorResponse, status_code=404
 )  # For PropertyNotFound or FavoriteNotFound
 @validate_response(ErrorResponse, status_code=500)  # For general ServiceException
+@tag(["Favorite"])
 async def remove_favorite(property_id: int):
     """Removes a property from the current user's favorites."""
     user = await current_user.get_user()
@@ -74,6 +75,7 @@ async def remove_favorite(property_id: int):
 @login_required
 @validate_response(List[PropertyResponse], status_code=200)
 @validate_response(ErrorResponse, status_code=500)  # For general ServiceException
+@tag(["Favorite"])
 async def get_my_favorites():
     """Gets the list of properties favorited by the current user."""
     user = await current_user.get_user()

@@ -1,23 +1,23 @@
 import uuid
 
+from models.user import PublicUserResponse, UpdateUserRequest, User, UserResponse
 from quart import Blueprint, current_app
-from quart_auth import auth_required, current_user
-from quart_schema import validate_request, validate_response
-
-from api.models.user import PublicUserResponse, UpdateUserRequest, User, UserResponse
-from api.services.database import get_session
-from api.services.exceptions import (
+from quart_auth import current_user, login_required
+from quart_schema import tag, validate_request, validate_response
+from services.database import get_session
+from services.exceptions import (
     EmailAlreadyExistsException,
     UnauthorizedException,
     UserNotFoundException,
 )
-from api.services.user_service import UserService
+from services.user_service import UserService
 
 # Define the Blueprint
 bp = Blueprint("user", __name__, url_prefix="/users")
 
 
 # Helper to get full user object (similar to chat_routes, consider centralizing)
+@tag(["User"])
 async def get_current_user_object() -> User:
     """Helper to retrieve the full User object for the logged-in user."""
     user_id_str = current_user.auth_id
@@ -40,11 +40,12 @@ async def get_current_user_object() -> User:
 
 
 @bp.route("/me", methods=["GET"])
-@auth_required
+@login_required
 @validate_response(UserResponse)
+@tag(["User"])
 async def get_me():
     """Get the profile details of the currently authenticated user."""
-    # The auth_required decorator ensures current_user exists.
+    # The login_required decorator ensures current_user exists.
     # We fetch the full object to ensure all data is available for UserResponse.
     user = await get_current_user_object()
     # Pydantic model validation handles conversion from ORM object
@@ -52,9 +53,10 @@ async def get_me():
 
 
 @bp.route("/me", methods=["PUT"])
-@auth_required
+@login_required
 @validate_request(UpdateUserRequest)
 @validate_response(UserResponse)
+@tag(["User"])
 async def update_me(data: UpdateUserRequest):
     """Update the profile details of the currently authenticated user."""
     requesting_user = await get_current_user_object()
@@ -93,6 +95,7 @@ async def update_me(data: UpdateUserRequest):
 
 @bp.route("/<uuid:user_id>/profile", methods=["GET"])
 @validate_response(PublicUserResponse)
+@tag(["User"])
 async def get_user_profile(user_id: uuid.UUID):
     """Get the public profile details of a specific user."""
     async with get_session() as db_session:

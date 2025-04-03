@@ -1,10 +1,12 @@
 import abc
 import os
 import uuid
-from typing import BinaryIO
+from typing import Optional, Tuple, Type
 
 import aiofiles
-from azure.storage.blob.aio import BlobClient, BlobServiceClient
+from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
+from azure.storage.blob import PublicAccess
+from azure.storage.blob.aio import BlobClient, BlobServiceClient, ContainerClient
 from quart import current_app
 from werkzeug.utils import secure_filename
 
@@ -12,8 +14,12 @@ from werkzeug.utils import secure_filename
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
-def allowed_file(filename):
+def allowed_file(filename: str) -> bool:
+    """Check if the file extension is allowed."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# --- Custom Storage Exceptions ---
 
 
 class StorageException(Exception):
@@ -28,11 +34,63 @@ class FileNotAllowedException(StorageException):
     pass
 
 
+# Azure Specific Exceptions
+class BlobStorageError(StorageException):
+    """Base exception for Azure Blob Service errors."""
+
+    pass
+
+
+class BlobInitializationError(BlobStorageError):
+    """Error during Azure client or container initialization."""
+
+    pass
+
+
+class BlobUploadError(BlobStorageError):
+    """Error during Azure blob upload."""
+
+    pass
+
+
+class BlobDeleteError(BlobStorageError):
+    """Error during Azure blob deletion (other than not found)."""
+
+    pass
+
+
+class BlobNotFoundError(BlobStorageError, FileNotFoundError):
+    """Specific error for when an Azure blob is not found."""
+
+    pass
+
+
+# --- Storage Interface ---
+
+
 class StorageInterface(abc.ABC):
-    """Abstract base class for storage implementations."""
+    """
+    Abstract base class for storage implementations.
+    Implementations should support async context management (`async with`).
+    """
 
     @abc.abstractmethod
-    async def save(self, file_storage, original_filename: str) -> tuple[str, str]:
+    async def __aenter__(self) -> "StorageInterface":
+        """Enter the runtime context related to this object."""
+        pass
+
+    @abc.abstractmethod
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[Type],
+    ) -> Optional[bool]:
+        """Exit the runtime context related to this object."""
+        pass
+
+    @abc.abstractmethod
+    async def save(self, file_storage, original_filename: str) -> Tuple[str, str]:
         """
         Saves the file and returns a tuple of (public_url, internal_filename).
         'file_storage' is expected to be a file-like object (e.g., from request.files).
@@ -51,6 +109,9 @@ class StorageInterface(abc.ABC):
         pass
 
 
+# --- Local Storage Implementation ---
+
+
 class LocalStorage(StorageInterface):
     """Stores files on the local filesystem."""
 
@@ -63,7 +124,22 @@ class LocalStorage(StorageInterface):
             f"LocalStorage initialized with folder: {self.upload_folder}"
         )
 
-    async def save(self, file_storage, original_filename: str) -> tuple[str, str]:
+    async def __aenter__(self) -> "LocalStorage":
+        """Enter context, no specific action needed for local storage."""
+        current_app.logger.debug("Entering LocalStorage context.")
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[Type],
+    ) -> Optional[bool]:
+        """Exit context, no specific cleanup needed for local storage."""
+        current_app.logger.debug("Exiting LocalStorage context.")
+        return None  # Propagate exceptions if any
+
+    async def save(self, file_storage, original_filename: str) -> Tuple[str, str]:
         if not allowed_file(original_filename):
             raise FileNotAllowedException(f"File type not allowed: {original_filename}")
 
@@ -105,9 +181,7 @@ class LocalStorage(StorageInterface):
         try:
             file_path = os.path.join(self.upload_folder, filename)
             if os.path.exists(file_path):
-                # Use aiofiles for async delete? os.remove is blocking but might be acceptable.
-                # For true async, consider asyncio.to_thread or a dedicated async library if available.
-                # Using os.remove for simplicity here.
+                # Using os.remove for simplicity here. Consider asyncio.to_thread for true async.
                 os.remove(file_path)
                 current_app.logger.info(f"Deleted local file: {filename}")
             else:
@@ -122,12 +196,14 @@ class LocalStorage(StorageInterface):
 
     def get_url(self, filename: str) -> str:
         # Returns a relative URL path. Assumes Quart serves the /uploads directory.
-        # Ensure app is configured to serve static files from UPLOAD_FOLDER under /uploads path.
         return f"{self.base_url}/{filename}"
 
 
+# --- Azure Blob Storage Implementation ---
+
+
 class AzureBlobStorage(StorageInterface):
-    """Stores files in Azure Blob Storage."""
+    """Stores files in Azure Blob Storage using an async context manager."""
 
     def __init__(self, connection_string: str, container_name: str):
         if not connection_string:
@@ -136,36 +212,128 @@ class AzureBlobStorage(StorageInterface):
             )
         self.connection_string = connection_string
         self.container_name = container_name
+        self.blob_service_client: Optional[BlobServiceClient] = None
+        self.container_client: Optional[ContainerClient] = None
+        current_app.logger.info(
+            f"AzureBlobStorage instance created for container: {self.container_name}. Use 'async with' to initialize."
+        )
+
+    async def __aenter__(self) -> "AzureBlobStorage":
+        """Initializes clients and container connection."""
+        if self.blob_service_client:
+            current_app.logger.warning(
+                f"AzureBlobStorage context entered again for {self.container_name} without exiting previous."
+            )
+            return self
+
+        current_app.logger.info(
+            f"Entering AzureBlobStorage context for {self.container_name}..."
+        )
         try:
             self.blob_service_client = BlobServiceClient.from_connection_string(
                 self.connection_string
             )
-            # Try to create container if it doesn't exist (optional, requires permissions)
-            # asyncio.run(self._create_container_if_not_exists()) # Can't run async in init easily
+            self.container_client = await self._get_or_create_container()
             current_app.logger.info(
-                f"AzureBlobStorage initialized for container: {self.container_name}"
+                f"AzureBlobStorage context entered and initialized for container: {self.container_name}"
+            )
+            return self
+        except BlobInitializationError:
+            raise
+        except Exception as e:
+            current_app.logger.error(
+                f"Failed to initialize Azure Blob Storage client/container: {e}",
+                exc_info=True,
+            )
+            # Ensure cleanup happens if partially initialized
+            await self.__aexit__(type(e), e, e.__traceback__)
+            raise BlobInitializationError(
+                f"Failed to initialize Azure Blob Storage: {e}"
+            ) from e
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[Type],
+    ) -> Optional[bool]:
+        """Closes clients and connections."""
+        current_app.logger.info(
+            f"Exiting AzureBlobStorage context for container: {self.container_name}."
+        )
+        closed_container = False
+        closed_service = False
+
+        if self.container_client:
+            try:
+                await self.container_client.close()
+                closed_container = True
+                current_app.logger.debug(
+                    f"Closed Azure ContainerClient for {self.container_name}"
+                )
+            except Exception as e:
+                current_app.logger.error(
+                    f"Error closing Azure ContainerClient for {self.container_name}: {e}",
+                    exc_info=True,
+                )
+            finally:
+                self.container_client = None
+
+        if self.blob_service_client:
+            try:
+                await self.blob_service_client.close()
+                closed_service = True
+                current_app.logger.debug("Closed Azure BlobServiceClient")
+            except Exception as e:
+                current_app.logger.error(
+                    f"Error closing Azure BlobServiceClient: {e}", exc_info=True
+                )
+            finally:
+                self.blob_service_client = None
+
+        # Return None to propagate exceptions if any occurred within the 'with' block
+        return None
+
+    async def _get_or_create_container(self) -> ContainerClient:
+        """Gets or creates the Azure container."""
+        if not self.blob_service_client:
+            raise BlobInitializationError(
+                "BlobServiceClient not initialized before getting container."
+            )
+
+        container_client = self.blob_service_client.get_container_client(
+            self.container_name
+        )
+        try:
+            await container_client.create_container(public_access=PublicAccess.BLOB)
+            current_app.logger.info(f"Created Azure container: {self.container_name}")
+        except ResourceExistsError:
+            current_app.logger.info(
+                f"Using existing Azure container: {self.container_name}"
             )
         except Exception as e:
             current_app.logger.error(
-                f"Failed to initialize Azure BlobServiceClient: {e}", exc_info=True
+                f"Failed to get or create Azure container '{self.container_name}': {e}",
+                exc_info=True,
             )
-            raise StorageException(
-                f"Failed to initialize Azure BlobServiceClient: {e}"
+            raise BlobInitializationError(
+                f"Failed to get or create container '{self.container_name}': {e}"
             ) from e
+        return container_client
 
-    # Helper to create container (call from startup if needed)
-    # async def _create_container_if_not_exists(self):
-    #     try:
-    #         async with self.blob_service_client.get_container_client(self.container_name) as client:
-    #             # Check if exists? API might not have simple check, create might fail if exists
-    #             pass
-    #         await self.blob_service_client.create_container(self.container_name)
-    #         current_app.logger.info(f"Azure container '{self.container_name}' created or already exists.")
-    #     except Exception as e:
-    #         # Handle potential errors like container already exists, auth issues etc.
-    #         current_app.logger.warning(f"Could not ensure Azure container '{self.container_name}' exists: {e}")
+    def _get_blob_client(self, blob_name: str) -> BlobClient:
+        """Gets a BlobClient for a specific blob."""
+        if not self.container_client:
+            raise BlobInitializationError(
+                "ContainerClient not initialized. Ensure 'async with' context is active."
+            )
+        return self.container_client.get_blob_client(blob_name)
 
-    async def save(self, file_storage, original_filename: str) -> tuple[str, str]:
+    async def save(self, file_storage, original_filename: str) -> Tuple[str, str]:
+        if not self.container_client:  # Check if context is active
+            raise BlobInitializationError(
+                "Cannot save file, Azure storage context not active."
+            )
         if not allowed_file(original_filename):
             raise FileNotAllowedException(f"File type not allowed: {original_filename}")
 
@@ -173,24 +341,12 @@ class AzureBlobStorage(StorageInterface):
         filename = secure_filename(f"{uuid.uuid4()}{ext}")  # Unique name for blob
 
         try:
-            # Get a client for the specific blob
-            blob_client = self.blob_service_client.get_blob_client(
-                container=self.container_name, blob=filename
-            )
-
-            # Upload the stream directly
-            # file_storage.read() needs to be awaitable if it's an async stream
-            # Assuming file_storage is from Quart request.files, which might need chunked reading
-            # For simplicity, assuming upload_blob can handle the stream type or we read it first.
-            # Reading entire file into memory - BEWARE OF LARGE FILES!
-            # A chunked upload approach is better for large files.
-            # file_content = await file_storage.read()
-            # await blob_client.upload_blob(file_content, overwrite=True)
-
-            # More robust chunked reading:
-            await blob_client.upload_blob(
-                file_storage, overwrite=True, length=file_storage.content_length
-            )  # Pass length if known
+            blob_client = self._get_blob_client(filename)
+            async with blob_client:
+                content_length = getattr(file_storage, "content_length", None)
+                await blob_client.upload_blob(
+                    file_storage, overwrite=True, length=content_length
+                )
 
             public_url = self.get_url(filename)
             current_app.logger.info(
@@ -200,34 +356,40 @@ class AzureBlobStorage(StorageInterface):
 
         except Exception as e:
             current_app.logger.error(
-                f"Failed to upload file to Azure {filename}: {e}", exc_info=True
+                f"Failed to upload file '{original_filename}' to Azure blob '{filename}': {e}",
+                exc_info=True,
             )
-            raise StorageException(f"Failed to upload file to Azure: {e}") from e
-        finally:
-            # Ensure blob_client is closed if necessary (usually handled by context manager if used)
-            # await blob_client.close() # If needed
-            pass
+            raise BlobUploadError(
+                f"Failed to upload file '{original_filename}' to Azure blob '{filename}': {e}"
+            ) from e
 
     async def delete(self, filename: str) -> None:
-        try:
-            blob_client = self.blob_service_client.get_blob_client(
-                container=self.container_name, blob=filename
+        if not self.container_client:  # Check if context is active
+            raise BlobInitializationError(
+                "Cannot delete file, Azure storage context not active."
             )
-            await blob_client.delete_blob(delete_snapshots="include")
+        try:
+            blob_client = self._get_blob_client(filename)
+            async with blob_client:
+                await blob_client.delete_blob(delete_snapshots="include")
             current_app.logger.info(f"Deleted blob from Azure: {filename}")
+        except ResourceNotFoundError:
+            current_app.logger.warning(
+                f"Blob not found during delete attempt, skipping: {filename}"
+            )
         except Exception as e:
-            # Handle cases where blob doesn't exist gracefully?
             current_app.logger.error(
                 f"Failed to delete blob {filename} from Azure: {e}", exc_info=True
             )
-            raise StorageException(f"Failed to delete file from Azure: {e}") from e
-        finally:
-            # await blob_client.close() # If needed
-            pass
+            raise BlobDeleteError(
+                f"Failed to delete blob '{filename}' from Azure: {e}"
+            ) from e
 
     def get_url(self, filename: str) -> str:
-        # Construct the public URL for the blob
-        # Ensure container has public access enabled or use SAS tokens for private access
+        if not self.blob_service_client:  # Check if context is active/initialized
+            raise BlobInitializationError(
+                "Cannot get URL, Azure storage context not active or initialized."
+            )
         return f"{self.blob_service_client.url}{self.container_name}/{filename}"
 
 
@@ -237,22 +399,22 @@ class AzureBlobStorage(StorageInterface):
 def get_storage_manager(config) -> StorageInterface:
     """
     Factory function to create the appropriate storage manager based on config.
+    All returned storage managers should be used with 'async with'.
     """
     if config.AZURE_STORAGE_CONNECTION_STRING:
-        current_app.logger.info("Using Azure Blob Storage for uploads.")
+        current_app.logger.info(
+            "Creating Azure Blob Storage manager (requires 'async with' usage)."
+        )
         return AzureBlobStorage(
             connection_string=config.AZURE_STORAGE_CONNECTION_STRING,
             container_name=config.AZURE_STORAGE_CONTAINER_NAME,
         )
     else:
-        current_app.logger.info("Using Local File Storage for uploads.")
-        # Ensure UPLOAD_FOLDER is absolute or relative to a known location
+        current_app.logger.info(
+            "Creating Local File Storage manager (requires 'async with' usage)."
+        )
         upload_path = config.UPLOAD_FOLDER
         if not os.path.isabs(upload_path):
-            # Assuming config.py is in 'api/', make path relative to project root or api/
-            # This might need adjustment based on where hypercorn is run from.
-            # Let's assume relative to api/ for now.
-            api_dir = os.path.dirname(__file__)  # Directory of storage.py
-            upload_path = os.path.abspath(os.path.join(api_dir, upload_path))
+            upload_path = os.path.abspath(upload_path)
 
-        return LocalStorage(upload_folder=upload_path)
+        return LocalStorage(upload_folder=upload_path, base_url=config.UPLOAD_URL_PATH)

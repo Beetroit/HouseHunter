@@ -6,15 +6,15 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from api.models.base import Base
+from models.base import Base
 
 # Import related models for type checking and relationships
 if TYPE_CHECKING:
-    from api.models.property import Property
-    from api.models.user import User
+    from models.property import Property
+    from models.user import User
 
 # Import Pydantic schemas for nesting
-from api.models.user import UserResponse
+from models.user import UserResponse
 
 # --- SQLAlchemy Models ---
 

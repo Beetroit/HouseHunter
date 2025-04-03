@@ -340,21 +340,27 @@ class PropertyService:
                 "You are not authorized to add images to this property."
             )
 
-        storage: StorageInterface = current_app.storage_manager
-        if not storage:
+        storage_provider: StorageInterface = (
+            current_app.storage_manager
+        )  # Renamed for clarity within context
+
+        if not storage_provider:
             raise StorageException(
                 "Storage manager is not configured.", status_code=503
             )
-
-        try:
-            # Save the file using the configured storage manager
-            image_url, filename = await storage.save(image_file, image_file.filename)
-        except (FileNotAllowedException, StorageException) as e:
-            # Re-raise storage specific exceptions
-            raise e
-        except Exception as e:
-            # Catch other potential errors during save
-            raise StorageException(f"Failed to save image file: {e}") from e
+        # Use the storage manager as an async context manager
+        async with storage_provider as storage:
+            try:
+                # Save the file using the configured storage manager within the context
+                image_url, filename = await storage.save(
+                    image_file, image_file.filename
+                )
+            except (FileNotAllowedException, StorageException) as e:
+                # Re-raise storage specific exceptions
+                raise e
+            except Exception as e:
+                # Catch other potential errors during save
+                raise StorageException(f"Failed to save image file: {e}") from e
 
         # If setting as primary, unset other primary images for this property
         if is_primary:
@@ -388,7 +394,9 @@ class PropertyService:
                 exc_info=True,
             )
             try:
-                await storage.delete(filename)
+                # Attempt cleanup using the same context manager instance
+                async with storage_provider as storage_cleanup:
+                    await storage_cleanup.delete(filename)
             except Exception as cleanup_e:
                 current_app.logger.error(
                     f"Failed to cleanup uploaded file {filename} after DB error: {cleanup_e}"
@@ -438,8 +446,10 @@ class PropertyService:
                 "You are not authorized to delete images from this property."
             )
 
-        storage: StorageInterface = current_app.storage_manager
-        if not storage:
+        storage_provider: StorageInterface = (
+            current_app.storage_manager
+        )  # Renamed for clarity
+        if not storage_provider:
             raise StorageException(
                 "Storage manager is not configured.", status_code=503
             )
@@ -455,163 +465,9 @@ class PropertyService:
 
             # Then delete from storage
             try:
-                await storage.delete(filename_to_delete)
-            except Exception as storage_e:
-                # Log storage deletion error but don't rollback DB change
-                current_app.logger.error(
-                    f"Failed to delete file {filename_to_delete} from storage after deleting DB record {image_id}: {storage_e}",
-                    exc_info=True,
-                )
-                # Depending on policy, maybe raise a specific warning or error?
-                # For now, we prioritize removing the DB link.
-
-            return True
-        except Exception as e:
-            await self.session.rollback()
-            current_app.logger.error(
-                f"Error deleting image {image_id} from DB: {e}", exc_info=True
-            )
-            raise StorageException(f"Failed to delete image from database: {e}") from e
-
-    async def add_image_to_property(
-        self,
-        property_id: uuid.UUID,
-        image_file: FileStorage,
-        requesting_user: User,
-        is_primary: bool = False,
-    ) -> PropertyImage:
-        """Adds an image to a property after saving it via the storage manager."""
-        prop = await self.get_property_by_id(property_id)  # Fetch property first
-        if not prop:
-            raise PropertyNotFoundException(
-                f"Property with ID {property_id} not found."
-            )
-
-        # Authorization check: Must be lister, owner, or admin (same as update)
-        is_lister = prop.lister_id == requesting_user.id
-        is_owner = prop.owner_id == requesting_user.id
-        is_admin = requesting_user.role == UserRole.ADMIN
-        if not (is_lister or is_owner or is_admin):
-            raise UnauthorizedException(
-                "You are not authorized to add images to this property."
-            )
-
-        storage: StorageInterface = current_app.storage_manager
-        if not storage:
-            raise StorageException(
-                "Storage manager is not configured.", status_code=503
-            )
-
-        try:
-            # Save the file using the configured storage manager
-            image_url, filename = await storage.save(image_file, image_file.filename)
-        except (FileNotAllowedException, StorageException) as e:
-            # Re-raise storage specific exceptions
-            raise e
-        except Exception as e:
-            # Catch other potential errors during save
-            raise StorageException(f"Failed to save image file: {e}") from e
-
-        # If setting as primary, unset other primary images for this property
-        if is_primary:
-            stmt = (
-                update(PropertyImage)
-                .where(PropertyImage.property_id == property_id)
-                .where(PropertyImage.is_primary == True)
-                .values(is_primary=False)
-                .execution_options(synchronize_session=False)
-            )
-            await self.session.execute(stmt)
-
-        # Create database record for the image
-        new_image = PropertyImage(
-            property_id=property_id,
-            image_url=image_url,
-            filename=filename,  # Store the internal filename for deletion
-            is_primary=is_primary,
-        )
-        self.session.add(new_image)
-
-        try:
-            await self.session.flush()
-            await self.session.refresh(new_image)
-            return new_image
-        except Exception as e:
-            await self.session.rollback()
-            # Attempt to delete the already uploaded file if DB insert fails
-            current_app.logger.error(
-                f"DB error after image upload for property {property_id}. Attempting cleanup.",
-                exc_info=True,
-            )
-            try:
-                await storage.delete(filename)
-            except Exception as cleanup_e:
-                current_app.logger.error(
-                    f"Failed to cleanup uploaded file {filename} after DB error: {cleanup_e}"
-                )
-            raise StorageException(
-                f"Failed to save image metadata to database: {e}"
-            ) from e
-
-    async def delete_image_from_property(
-        self, image_id: uuid.UUID, requesting_user: User
-    ) -> bool:
-        """Deletes an image record from DB and the corresponding file from storage."""
-        # Fetch the image record and its associated property
-        stmt = (
-            select(PropertyImage)
-            .options(
-                selectinload(PropertyImage.property)
-            )  # Load property for auth check
-            .where(PropertyImage.id == image_id)
-        )
-        result = await self.session.execute(stmt)
-        image = result.scalar_one_or_none()
-
-        if not image:
-            # Don't raise error, just return false or log, as image might already be deleted
-            current_app.logger.warning(
-                f"Attempted to delete non-existent image record: {image_id}"
-            )
-            return False
-        if not image.property:
-            current_app.logger.error(
-                f"Image record {image_id} has no associated property."
-            )
-            # Delete the orphan record? Or just return false?
-            await self.session.delete(image)
-            await self.session.flush()
-            return False  # Indicate failure/inconsistency
-
-        prop = image.property
-
-        # Authorization check: Must be lister, owner, or admin of the property
-        is_lister = prop.lister_id == requesting_user.id
-        is_owner = prop.owner_id == requesting_user.id
-        is_admin = requesting_user.role == UserRole.ADMIN
-        if not (is_lister or is_owner or is_admin):
-            raise UnauthorizedException(
-                "You are not authorized to delete images from this property."
-            )
-
-        storage: StorageInterface = current_app.storage_manager
-        if not storage:
-            raise StorageException(
-                "Storage manager is not configured.", status_code=503
-            )
-
-        filename_to_delete = image.filename
-
-        try:
-            # Delete DB record first
-            await self.session.delete(image)
-            await (
-                self.session.flush()
-            )  # Flush to ensure DB delete happens before storage delete
-
-            # Then delete from storage
-            try:
-                await storage.delete(filename_to_delete)
+                # Use the storage manager as an async context manager
+                async with storage_provider as storage:
+                    await storage.delete(filename_to_delete)
             except Exception as storage_e:
                 # Log storage deletion error but don't rollback DB change
                 current_app.logger.error(

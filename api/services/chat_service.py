@@ -3,14 +3,14 @@ from datetime import datetime  # Import datetime
 from math import ceil
 from typing import List, Tuple
 
+from models.chat import Chat, ChatMessage, CreateChatMessageRequest
+from models.property import Property  # Needed to find property owner/lister
+from models.user import User
 from sqlalchemy import desc, func, or_, select, update  # Import or_ and update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from api.models.chat import Chat, ChatMessage, CreateChatMessageRequest
-from api.models.property import Property  # Needed to find property owner/lister
-from api.models.user import User
-from api.services.exceptions import (
+from services.exceptions import (
     ChatException,  # Import ChatException
     ChatNotFoundException,
     InvalidRequestException,

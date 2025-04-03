@@ -23,6 +23,7 @@ from routes import (
     property_routes,
     user_routes,  # Import user routes
 )
+from services.database import init_db
 from services.exceptions import ServiceException
 from services.storage import get_storage_manager  # Import storage manager factory
 
@@ -56,14 +57,13 @@ cors(
     allow_credentials=config.QUART_CORS_ALLOW_CREDENTIALS,
 )
 
+
 # --- Database ---
 # Database initialization is typically handled by Alembic migrations
 # You might add a check here or a startup task if needed
-# from services.database import init_db
-# @app.before_serving
-# async def startup_db(): # Renamed for clarity
-#     if config.QUART_ENV == 'development': # Example: only init in dev if needed
-#         await init_db()
+@app.before_serving
+async def startup_db():  # Renamed for clarity
+    await init_db()
 
 
 # --- Redis Broker & Storage Manager Setup ---

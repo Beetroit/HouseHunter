@@ -3,29 +3,32 @@ import json
 import uuid
 from typing import Optional  # Import Optional
 
-from pydantic import BaseModel, Field  # For query params
-from quart import Blueprint, current_app, websocket
-from quart_auth import auth_required, current_user  # Import auth_required
-from quart_schema import validate_querystring, validate_response  # Import decorators
-from redis.asyncio import Redis
-
-from api.models.chat import (  # Import ChatResponse & PaginatedChatMessageResponse
+from models.chat import (  # Import ChatResponse & PaginatedChatMessageResponse
     ChatMessageResponse,
     ChatResponse,
     CreateChatMessageRequest,
     PaginatedChatMessageResponse,
 )
-from api.models.user import User  # Import User model
-from api.services.chat_service import ChatService
-from api.services.database import get_session
-from api.services.exceptions import (  # Import more exceptions
+from models.user import User  # Import User model
+from pydantic import BaseModel, Field  # For query params
+from quart import Blueprint, current_app, websocket
+from quart_auth import current_user, login_required  # Import login_required
+from quart_schema import (
+    tag,
+    validate_querystring,
+    validate_response,
+)  # Import decorators
+from redis.asyncio import Redis
+from services.chat_service import ChatService
+from services.database import get_session
+from services.exceptions import (  # Import more exceptions
     ChatException,
     ChatNotFoundException,
     InvalidRequestException,
     PropertyNotFoundException,
     UnauthorizedException,
 )
-from api.services.user_service import UserService  # To fetch user object
+from services.user_service import UserService  # To fetch user object
 
 bp = Blueprint("chat", __name__, url_prefix="/chat")
 
@@ -53,8 +56,9 @@ async def get_current_user_object() -> User:
 
 # --- HTTP Route for Initiating Chat ---
 @bp.route("/initiate/<uuid:property_id>", methods=["POST"])
-@auth_required
+@login_required
 # Consider adding @validate_response(ChatResponse) if you want schema validation
+@tag(["Chat"])
 async def initiate_chat(property_id: uuid.UUID):
     """
     Finds or creates a chat session for the current user regarding a specific property.
@@ -98,9 +102,10 @@ class GetMessagesQueryArgs(BaseModel):
 
 
 @bp.route("/<uuid:chat_id>/messages", methods=["GET"])
-@auth_required
+@login_required
 @validate_querystring(GetMessagesQueryArgs)
 @validate_response(PaginatedChatMessageResponse)
+@tag(["Chat"])
 async def get_messages(chat_id: uuid.UUID, query_args: GetMessagesQueryArgs):
     """Fetches paginated message history for a specific chat."""
     requesting_user = await get_current_user_object()

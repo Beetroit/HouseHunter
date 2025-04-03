@@ -1,11 +1,11 @@
+from models.favorite import Favorite
+from models.property import Property
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from api.models.favorite import Favorite
-from api.models.property import Property
-from api.services.exceptions import (
+from services.exceptions import (
     FavoriteAlreadyExistsException,
     FavoriteNotFoundException,
     PropertyNotFoundException,

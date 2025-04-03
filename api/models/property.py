@@ -19,14 +19,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from api.models.base import Base
+from models.base import Base
 
 # Import UserResponse normally, but User only for type checking
-from api.models.user import UserResponse
+from models.user import UserResponse
 
 if TYPE_CHECKING:
-    from api.models.chat import Chat  # Add Chat import for relationship
-    from api.models.user import User
+    from models.chat import Chat  # Add Chat import for relationship
+    from models.user import User
 
 
 # --- Enums ---
@@ -52,6 +52,8 @@ class PropertyStatus(str, Enum):
 class PropertyImage(Base):
     """Represents an image associated with a property."""
 
+    __tablename__ = "property_images"
+
     id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True, index=True, default=uuid.uuid4
     )
@@ -72,7 +74,9 @@ class PropertyImage(Base):
     )
 
     # Relationship back to Property
-    property: Mapped["Property"] = relationship("Property", back_populates="images")
+    property: Mapped["Property"] = relationship(
+        "Property", back_populates="images", foreign_keys=[property_id]
+    )
 
     def __repr__(self):
         return f"<PropertyImage(id={self.id}, property_id={self.property_id}, url='{self.image_url[:30]}...')>"
@@ -80,6 +84,8 @@ class PropertyImage(Base):
 
 class Property(Base):
     """SQLAlchemy model for property listings."""
+
+    __tablename__ = "properties"
 
     id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True, index=True, default=uuid.uuid4

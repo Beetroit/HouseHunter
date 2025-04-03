@@ -32,7 +32,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # Deprecated and unnecessary
 
     # Quart-Auth settings
-    QUART_AUTH_DURATION = timedelta(days=30)
+    QUART_AUTH_DURATION = timedelta(days=1).seconds
     QUART_AUTH_COOKIE_SECURE = QUART_ENV == "production"
     QUART_AUTH_COOKIE_HTTPONLY = True
     QUART_AUTH_COOKIE_SAMESITE = "Lax"

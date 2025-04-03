@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from api.models.base import Base
+from models.base import Base
 
 if TYPE_CHECKING:
     from .property import Property  # Import needed for relationship type hint

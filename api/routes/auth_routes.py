@@ -1,3 +1,4 @@
+import uuid
 from models.user import (
     CreateUserRequest,
     LoginRequest,
@@ -7,12 +8,12 @@ from models.user import (
 from quart import Blueprint, current_app, jsonify
 from quart_auth import (
     AuthUser,  # Use AuthUser for type hinting current_user proxy
-    auth_required,
     current_user,
+    login_required,
     login_user,
     logout_user,
 )
-from quart_schema import validate_request, validate_response
+from quart_schema import validate_request, validate_response, tag
 from services.database import get_session
 from services.exceptions import (
     EmailAlreadyExistsException,
@@ -28,6 +29,7 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 @bp.route("/register", methods=["POST"])
 @validate_request(CreateUserRequest)
 @validate_response(UserResponse, status_code=201)
+@tag(["Auth"])
 async def register(data: CreateUserRequest) -> UserResponse:
     """Register a new user."""
     async with get_session() as db_session:
@@ -36,7 +38,7 @@ async def register(data: CreateUserRequest) -> UserResponse:
             new_user = await user_service.create_user(data)
             await db_session.commit()  # Commit after successful creation
             # Automatically log in the user after successful registration
-            login_user(AuthUser(new_user.id))  # Use AuthUser with user's ID
+            login_user(AuthUser(new_user.id.hex))  # Use AuthUser with user's ID
             current_app.logger.info(f"User registered and logged in: {new_user.email}")
             # Convert SQLAlchemy model to Pydantic response model
             return UserResponse.model_validate(new_user)
@@ -54,6 +56,7 @@ async def register(data: CreateUserRequest) -> UserResponse:
 @bp.route("/login", methods=["POST"])
 @validate_request(LoginRequest)
 @validate_response(LoginResponse, status_code=200)
+@tag(["Auth"])
 async def login(data: LoginRequest) -> LoginResponse:
     """Log in an existing user."""
     async with get_session() as db_session:
@@ -70,7 +73,7 @@ async def login(data: LoginRequest) -> LoginResponse:
                 "Account is inactive."
             )  # Or a more specific exception
 
-        login_user(AuthUser(user.id))  # Use AuthUser with user's ID
+        login_user(AuthUser(user.id.hex))  # Use AuthUser with user's ID
         current_app.logger.info(f"User logged in: {user.email}")
         # Convert user model to response model before returning
         user_resp = UserResponse.model_validate(user)
@@ -78,7 +81,8 @@ async def login(data: LoginRequest) -> LoginResponse:
 
 
 @bp.route("/logout", methods=["POST"])
-@auth_required  # Ensure user is logged in to log out
+@login_required  # Ensure user is logged in to log out
+@tag(["Auth"])
 async def logout():
     """Log out the current user."""
     user_id = current_user.auth_id  # Get user ID from the proxy
@@ -88,7 +92,8 @@ async def logout():
 
 
 @bp.route("/me", methods=["GET"])
-@auth_required  # Ensure user is logged in
+@tag(["User"])
+@login_required  # Ensure user is logged in
 @validate_response(UserResponse, status_code=200)
 async def get_current_user() -> UserResponse:
     """Get the details of the currently logged-in user."""
@@ -96,7 +101,7 @@ async def get_current_user() -> UserResponse:
     # We need to fetch the full user details from the DB using the ID
     user_id = current_user.auth_id
     if not user_id:
-        # Should not happen if @auth_required works, but good practice
+        # Should not happen if @login_required works, but good practice
         raise InvalidCredentialsException("Not authenticated.", 401)
 
     async with get_session() as db_session:
@@ -114,7 +119,3 @@ async def get_current_user() -> UserResponse:
 
         # Convert the SQLAlchemy User model to Pydantic UserResponse
         return UserResponse.model_validate(user)
-
-
-# Note: Need to import uuid at the top
-import uuid

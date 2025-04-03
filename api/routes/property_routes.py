@@ -11,8 +11,8 @@ from models.property import (
 from models.user import User  # Import User for type hinting
 from pydantic import BaseModel, Field  # For query parameters model
 from quart import Blueprint, current_app, request  # Import request
-from quart_auth import auth_required, current_user
-from quart_schema import validate_querystring, validate_request, validate_response
+from quart_auth import current_user, login_required
+from quart_schema import tag, validate_querystring, validate_request, validate_response
 from services.database import get_session
 from services.exceptions import (
     FileNotAllowedException,  # Import FileNotAllowedException
@@ -62,9 +62,10 @@ class ListPropertiesQueryArgs(BaseModel):
 
 
 @bp.route("", methods=["POST"])
-@auth_required
+@login_required
 @validate_request(CreatePropertyRequest)
 @validate_response(PropertyResponse, status_code=201)
+@tag(["Property"])
 async def create_property(data: CreatePropertyRequest) -> PropertyResponse:
     """Create a new property listing."""
     requesting_user = await get_current_user_object()
@@ -91,6 +92,7 @@ async def create_property(data: CreatePropertyRequest) -> PropertyResponse:
 @bp.route("", methods=["GET"])
 @validate_querystring(ListPropertiesQueryArgs)
 @validate_response(PaginatedPropertyResponse, status_code=200)
+@tag(["Property"])
 async def list_properties(
     query_args: ListPropertiesQueryArgs,
 ) -> PaginatedPropertyResponse:
@@ -115,9 +117,10 @@ async def list_properties(
 
 
 @bp.route("/my-listings", methods=["GET"])
-@auth_required
+@login_required
 @validate_querystring(ListPropertiesQueryArgs)  # Reuse pagination schema
 @validate_response(PaginatedPropertyResponse, status_code=200)
+@tag(["Property"])
 async def list_my_properties(
     query_args: ListPropertiesQueryArgs,
 ) -> PaginatedPropertyResponse:
@@ -143,6 +146,7 @@ async def list_my_properties(
 
 @bp.route("/<uuid:property_id>", methods=["GET"])
 @validate_response(PropertyResponse, status_code=200)
+@tag(["Property"])
 async def get_property(property_id: uuid.UUID) -> PropertyResponse:
     """Get details of a specific property."""
     requesting_user: Optional[User] = None
@@ -165,9 +169,10 @@ async def get_property(property_id: uuid.UUID) -> PropertyResponse:
 
 
 @bp.route("/<uuid:property_id>", methods=["PUT"])
-@auth_required
+@login_required
 @validate_request(UpdatePropertyRequest)
 @validate_response(PropertyResponse, status_code=200)
+@tag(["Property"])
 async def update_property(
     property_id: uuid.UUID, data: UpdatePropertyRequest
 ) -> PropertyResponse:
@@ -198,8 +203,8 @@ async def update_property(
 
 
 @bp.route("/<uuid:property_id>", methods=["DELETE"])
-@auth_required
-@validate_response(status_code=204)  # No content on successful delete
+@login_required
+@tag(["Property"])
 async def delete_property(property_id: uuid.UUID):
     """Delete a property listing (owner or admin only)."""
     requesting_user = await get_current_user_object()
@@ -232,8 +237,9 @@ async def delete_property(property_id: uuid.UUID):
 
 
 @bp.route("/<uuid:property_id>/images", methods=["POST"])
-@auth_required
+@login_required
 @validate_response(PropertyImageResponse, status_code=201)
+@tag(["Property"])
 async def upload_property_image(property_id: uuid.UUID):
     """Upload an image for a specific property."""
     requesting_user = await get_current_user_object()
@@ -279,8 +285,8 @@ async def upload_property_image(property_id: uuid.UUID):
 
 
 @bp.route("/images/<uuid:image_id>", methods=["DELETE"])
-@auth_required
-@validate_response(status_code=204)  # No content on success
+@login_required
+@tag(["Property"])
 async def delete_property_image(image_id: uuid.UUID):
     """Delete a specific property image."""
     requesting_user = await get_current_user_object()

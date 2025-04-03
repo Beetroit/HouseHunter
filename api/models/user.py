@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, List, Optional
 # Import models for type checking only to avoid circular imports
 if TYPE_CHECKING:
     from .property import Property
-
+    from .favorite import Favorite  # Import for relationship type hint
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import Boolean, Integer, String, Text, func  # Add Text
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from api.models.base import Base
+from models.base import Base
 
 
 # --- Enums ---
@@ -25,6 +25,8 @@ class UserRole(str, Enum):
 # --- SQLAlchemy Model ---
 class User(Base):
     """SQLAlchemy model for users."""
+
+    __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True, index=True, default=uuid.uuid4
@@ -75,6 +77,13 @@ class User(Base):
         "Property",
         foreign_keys="[Property.owner_id]",
         back_populates="owner",
+        lazy="selectin",
+    )
+    # Relationship to favorites
+    favorites: Mapped[List["Favorite"]] = relationship(  # type: ignore[name-defined]
+        "Favorite",
+        back_populates="user",
+        cascade="all, delete-orphan",  # Delete favorites if user is deleted
         lazy="selectin",
     )
     # sent_messages: Mapped[List["ChatMessage"]] = relationship("ChatMessage", foreign_keys="[ChatMessage.sender_id]", back_populates="sender")

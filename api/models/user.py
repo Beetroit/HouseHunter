@@ -75,6 +75,28 @@ class User(Base):
     # received_messages: Mapped[List["ChatMessage"]] = relationship("ChatMessage", foreign_keys="[ChatMessage.receiver_id]", back_populates="receiver")
     # involved_chats: Mapped[List["Chat"]] = relationship("Chat", secondary="chat_participants", back_populates="participants")
 
+    def __repr__(self):
+        return f"User(id={self.id}, email={self.email}, role={self.role})"
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "phone_number": self.phone_number,
+            "role": self.role,
+            "is_active": self.is_active,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "listed_properties": [
+                property.to_dict() for property in self.listed_properties
+            ],
+            "owned_properties": [
+                property.to_dict() for property in self.owned_properties
+            ],
+        }
+
 
 # --- Pydantic Schemas ---
 

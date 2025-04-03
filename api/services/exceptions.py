@@ -69,3 +69,10 @@ class InvalidRequestException(ServiceException):
 
     def __init__(self, message: str = "Invalid request data", status_code: int = 400):
         super().__init__(message, status_code)
+
+
+class ChatNotFoundException(ServiceException):
+    """Raised when a chat session is not found."""
+
+    def __init__(self, message: str = "Chat not found", status_code: int = 404):
+        super().__init__(message, status_code)

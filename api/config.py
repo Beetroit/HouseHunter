@@ -50,6 +50,9 @@ class Config:
         "PAYSTACK_PUBLIC_KEY", "your_paystack_public_key"
     )
 
+    # Redis configuration
+    REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""
@@ -89,6 +92,11 @@ class ProductionConfig(Config):
         raise ValueError("No DATABASE_URL set for production environment")
     if SECRET_KEY is None:
         raise ValueError("No SECRET_KEY set for production environment")
+
+    # Require REDIS_URL in production as well
+    REDIS_URL = os.environ.get("REDIS_URL", None)
+    if REDIS_URL is None:
+        raise ValueError("No REDIS_URL set for production environment")
 
 
 # Dictionary to easily select config based on environment variable

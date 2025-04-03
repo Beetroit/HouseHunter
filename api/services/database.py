@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -63,13 +64,14 @@ async def init_db():
     if not using migrations immediately.
     """
     # Import Base from models.base AFTER models are defined to avoid circular imports
-    # from models.base import Base
-    # async with engine.begin() as conn:
-    #     # await conn.run_sync(Base.metadata.drop_all) # Use with caution!
-    #     await conn.run_sync(Base.metadata.create_all)
+    from models.base import Base
+
+    async with engine.begin() as conn:
+        # await conn.run_sync(Base.metadata.drop_all) # Use with caution!
+        await conn.run_sync(Base.metadata.create_all)
     print("Database initialization skipped (handled by Alembic).")
 
 
 # Example of how to run init_db if needed (e.g., in a startup script)
-# if __name__ == "__main__":
-#     asyncio.run(init_db())
+if __name__ == "__main__":
+    asyncio.run(init_db())

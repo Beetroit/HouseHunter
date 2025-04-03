@@ -225,6 +225,46 @@ const apiService = {
         }
     },
 
+    // --- Chat API Calls ---
+
+    /**
+     * Initiates a chat session for a given property or retrieves an existing one.
+     * @param {string} propertyId - The UUID of the property.
+     * @returns {Promise<object>} - The chat session details (ChatResponse schema).
+     */
+    initiateChat: async (propertyId) => {
+        console.log(`Initiating chat for property ID: ${propertyId}`);
+        try {
+            const response = await apiClient.post(`/chat/initiate/${propertyId}`);
+            console.log('Initiate chat response:', response.data);
+            return response.data; // Should return chat session details including id
+        } catch (error) {
+            console.error(`Initiate Chat API error (Property ID: ${propertyId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to initiate chat');
+        }
+    },
+
+    /**
+     * Fetches paginated message history for a specific chat.
+     * @param {string} chatId - The UUID of the chat session.
+     * @param {number} [page=1] - The page number to fetch.
+     * @param {number} [perPage=50] - The number of messages per page.
+     * @returns {Promise<object>} - Paginated message data (PaginatedChatMessageResponse schema).
+     */
+    getChatMessages: async (chatId, page = 1, perPage = 50) => {
+        console.log(`Fetching messages for chat ${chatId}, page ${page}`);
+        try {
+            const response = await apiClient.get(`/chat/${chatId}/messages`, {
+                params: { page: page, per_page: perPage } // Ensure param names match backend expectation
+            });
+            console.log('Get chat messages response:', response.data);
+            return response.data; // Should be PaginatedChatMessageResponse
+        } catch (error) {
+            console.error(`Get Chat Messages API error (Chat ID: ${chatId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to fetch chat messages');
+        }
+    },
+
 };
 
 export default apiService;

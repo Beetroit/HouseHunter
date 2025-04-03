@@ -7,7 +7,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.exceptions import EmailAlreadyExistsException, UserNotFoundException
+from services.exceptions import (
+    EmailAlreadyExistsException,
+    UnauthorizedException,
+    UserNotFoundException,
+)
 
 # Configure password hashing
 # Using bcrypt, which is a strong and widely recommended hashing algorithm
@@ -74,7 +78,7 @@ class UserService:
             raise ValueError(f"Could not create user: {e}") from e
 
     async def update_user(
-        self, user_id: uuid.UUID, update_data: UpdateUserRequest
+        self, user_id: uuid.UUID, update_data: UpdateUserRequest, requesting_user: User
     ) -> User:
         """Update an existing user."""
         user = await self.get_user_by_id(user_id)
@@ -98,6 +102,15 @@ class UserService:
                 )
             user.email = new_email
             update_dict.pop("email")  # Remove email from dict as it's handled
+
+        # Check for sensitive fields and authorize admin access
+        sensitive_fields = {"role", "reputation_points", "is_verified_agent"}
+        updating_sensitive = sensitive_fields.intersection(update_dict.keys())
+
+        if updating_sensitive and requesting_user.role != UserRole.ADMIN:
+            raise UnauthorizedException(
+                f"Admin privileges required to update fields: {', '.join(updating_sensitive)}"
+            )
 
         # Update remaining fields
         for key, value in update_dict.items():

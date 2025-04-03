@@ -4,6 +4,7 @@ import './App.css';
 import { useAuth } from './contexts/AuthContext'; // Ensure useAuth is imported
 
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'; // Use .jsx extension
+import ChatPage from './pages/ChatPage.jsx'; // Import the new ChatPage
 import CreateListingPage from './pages/CreateListingPage.jsx'; // Use .jsx extension
 import DashboardPage from './pages/DashboardPage.jsx'; // Use .jsx extension
 import EditListingPage from './pages/EditListingPage.jsx'; // Use .jsx extension
@@ -37,6 +38,18 @@ const AdminRoute = ({ children }) => {
     return children;
 };
 
+// Agent or Admin Route component
+const AgentOrAdminRoute = ({ children }) => {
+    const { currentUser } = useAuth();
+    // Assumes ProtectedRoute already handled the login check
+    const allowedRoles = ['agent', 'admin'];
+    if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+        // Redirect non-agents/admins away
+        return <Navigate to="/dashboard" replace />;
+    }
+    return children;
+};
+
 function App() {
     // This line should already be present from previous attempt, ensure it is.
     const { currentUser, logout } = useAuth();
@@ -51,7 +64,10 @@ function App() {
                             <li><Link to="/dashboard">Dashboard</Link></li>
                             {/* Add Admin Dashboard link if user is admin */}
                             {currentUser.role === 'admin' && <li><Link to="/admin/dashboard">Admin Dashboard</Link></li>}
-                            <li><Link to="/create-listing">Create Listing</Link></li> {/* Add link */}
+                            {/* Show Create Listing link only to agents or admins */}
+                            {(currentUser.role === 'agent' || currentUser.role === 'admin') && (
+                                <li><Link to="/create-listing">Create Listing</Link></li>
+                            )}
                             <li><button onClick={logout}>Logout</button></li>
                             {/* Display user email or name if available */}
                             {currentUser.email && <li style={{ color: 'white', marginLeft: 'auto', marginRight: '1rem' }}>{currentUser.email}</li>}
@@ -74,11 +90,14 @@ function App() {
                     <Route path="/register" element={currentUser ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
                     {/* Protect the dashboard route */}
                     <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                    <Route path="/create-listing" element={<ProtectedRoute><CreateListingPage /></ProtectedRoute>} /> {/* Add route */}
+                    {/* Protect Create Listing route for logged-in users AND check role */}
+                    <Route path="/create-listing" element={<ProtectedRoute><AgentOrAdminRoute><CreateListingPage /></AgentOrAdminRoute></ProtectedRoute>} />
                     <Route path="/listings/:id" element={<ListingDetailPage />} />
                     <Route path="/edit-listing/:id" element={<ProtectedRoute><EditListingPage /></ProtectedRoute>} />
                     {/* Add protected admin route */}
                     <Route path="/admin/dashboard" element={<ProtectedRoute><AdminRoute><AdminDashboardPage /></AdminRoute></ProtectedRoute>} />
+                    {/* Add protected chat route */}
+                    <Route path="/chat/:chatId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
                     <Route path="*" element={<NotFoundPage />} /> {/* Catch-all for 404 */}
                 </Routes>
             </main>

@@ -1,10 +1,12 @@
 import logging
 import os
 
+import redis.asyncio as redis
+from redis.asyncio import Redis
 from config import get_config
 from models.base import ErrorDetail, ErrorResponse
 from quart import Quart, jsonify
-from quart_auth import AuthManager
+from quart_auth import QuartAuth
 from quart_cors import cors
 from quart_schema import (
     QuartSchema,
@@ -41,7 +43,7 @@ def create_app(config_name=None):
 
     # --- Extensions ---
     QuartSchema(app)
-    AuthManager(app)
+    QuartAuth(app)
     cors(
         app,
         allow_origin=config.QUART_CORS_ALLOW_ORIGIN,
@@ -56,6 +58,37 @@ def create_app(config_name=None):
     # async def startup():
     #     if config.QUART_ENV == 'development': # Example: only init in dev if needed
     #         await init_db()
+
+    # --- Redis Broker Setup ---
+    @app.before_serving
+    async def startup_redis():
+        app.logger.info("Connecting to Redis...")
+        try:
+            # Create pool or client connection
+            # Using client here for simplicity, pool might be better for high concurrency
+            app.redis_broker = await redis.from_url(
+                config.REDIS_URL,
+                decode_responses=True,  # Decode responses to strings
+            )
+            # Test connection
+            await app.redis_broker.ping()
+            app.logger.info("Successfully connected to Redis.")
+        except Exception as e:
+            app.logger.error(f"Failed to connect to Redis: {e}", exc_info=True)
+            # Depending on requirements, you might want to raise the error
+            # or allow the app to start without Redis (graceful degradation)
+            app.redis_broker = None  # Ensure it's None if connection failed
+
+    @app.after_serving
+    async def shutdown_redis():
+        if hasattr(app, "redis_broker") and app.redis_broker:
+            app.logger.info("Closing Redis connection...")
+            try:
+                await app.redis_broker.close()
+                # await app.redis_broker.wait_closed() # Use if using connection pool
+                app.logger.info("Redis connection closed.")
+            except Exception as e:
+                app.logger.error(f"Error closing Redis connection: {e}", exc_info=True)
 
     # --- Error Handlers ---
     @app.errorhandler(404)
@@ -108,6 +141,7 @@ def create_app(config_name=None):
     from routes import (
         admin_routes,  # Import the admin blueprint
         auth_routes,
+        chat_routes,  # Import chat routes
         property_routes,
     )
 
@@ -120,6 +154,7 @@ def create_app(config_name=None):
     app.register_blueprint(
         admin_routes.bp
     )  # Register admin routes (prefix defined in admin_routes.py)
+    app.register_blueprint(chat_routes.bp)  # Register chat routes
     # app.register_blueprint(user_routes.bp, url_prefix='/users')
 
     @app.route("/health")

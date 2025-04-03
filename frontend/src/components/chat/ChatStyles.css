@@ -1,0 +1,123 @@
+.chat-window {
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+    /* Example height */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #f9f9f9;
+    margin-bottom: 1rem;
+    /* Add some space below */
+}
+
+.chat-window h3 {
+    background-color: #eee;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    font-size: 1rem;
+}
+
+.connection-status {
+    padding: 0.2rem 1rem;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.connection-status.connected {
+    background-color: #d4edda;
+    /* Light green */
+    color: #155724;
+}
+
+.connection-status.disconnected {
+    background-color: #f8d7da;
+    /* Light red */
+    color: #721c24;
+}
+
+.message-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    list-style-type: none;
+    margin: 0;
+}
+
+.message-list li {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    max-width: 75%;
+    word-wrap: break-word;
+}
+
+.message-list li strong {
+    display: block;
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+    color: #555;
+}
+
+.message-list .other-message {
+    background-color: #e9ecef;
+    align-self: flex-start;
+    margin-right: auto;
+    /* Push to left */
+}
+
+.message-list .own-message {
+    background-color: #d1e7fd;
+    /* Light blue */
+    align-self: flex-end;
+    margin-left: auto;
+    /* Push to right */
+    text-align: right;
+}
+
+.message-list .own-message strong {
+    text-align: right;
+    /* Align sender name right */
+}
+
+
+.message-input-form {
+    display: flex;
+    padding: 0.5rem;
+    border-top: 1px solid #ccc;
+    background-color: #fff;
+}
+
+.message-input-form input[type="text"] {
+    flex-grow: 1;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+}
+
+.message-input-form button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.message-input-form button:hover {
+    background-color: #0056b3;
+}
+
+.error-message {
+    color: #721c24;
+    /* Dark red */
+    background-color: #f8d7da;
+    /* Light red */
+    border: 1px solid #f5c6cb;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin: 0.5rem 1rem;
+    font-size: 0.9rem;
+}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom'; // Import useParams to get the ID from the URL
+import { Link, useNavigate, useParams } from 'react-router-dom'; // Import useParams & useNavigate
+import { useAuth } from '../contexts/AuthContext.jsx'; // Import useAuth
 import apiService from '../services/apiService.jsx';
 import './ListingStyles.css'; // Reuse listing styles
 
@@ -8,6 +9,10 @@ function ListingDetailPage() {
     const [listing, setListing] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [chatError, setChatError] = useState(''); // Separate error state for chat initiation
+    const [isInitiatingChat, setIsInitiatingChat] = useState(false);
+    const { currentUser } = useAuth(); // Get current user
+    const navigate = useNavigate(); // Hook for navigation
 
     useEffect(() => {
         const fetchListingDetails = async () => {
@@ -77,14 +82,48 @@ function ListingDetailPage() {
                     {/* Add owner contact info if needed */}
                 </div>
             )}
+            {chatError && <p className="error-message">{chatError}</p>}
 
-            {/* TODO: Add "Chat with Owner" button */}
-            {/* TODO: Add "Edit/Delete" buttons if current user is owner */}
+            {/* Show Chat button only if logged in and not the lister */}
+            {currentUser && listing.lister && currentUser.id !== listing.lister.id && (
+                <button
+                    onClick={handleInitiateChat}
+                    disabled={isInitiatingChat}
+                    className="chat-button" // Add a class for styling if needed
+                >
+                    {isInitiatingChat ? 'Starting Chat...' : 'Chat with Lister'}
+                </button>
+            )}
+
+            {/* TODO: Add "Edit/Delete" buttons if current user is owner/lister/admin */}
             {/* TODO: Add "Verify/Reject" buttons if current user is admin */}
 
             <Link to="/">Back to Listings</Link>
+            <Link to="/">Back to Listings</Link>
         </div>
     );
+
+    // Handler for initiating chat
+    async function handleInitiateChat() {
+        if (!id || !currentUser) return; // Should not happen if button is shown correctly
+
+        setIsInitiatingChat(true);
+        setChatError('');
+        try {
+            const chatSession = await apiService.initiateChat(id);
+            if (chatSession && chatSession.id) {
+                // Navigate to a dedicated chat page (we need to create this route/page)
+                navigate(`/chat/${chatSession.id}`);
+            } else {
+                throw new Error("Failed to retrieve chat session ID.");
+            }
+        } catch (err) {
+            console.error("Failed to initiate chat:", err);
+            setChatError(err.message || "Could not start chat.");
+        } finally {
+            setIsInitiatingChat(false);
+        }
+    }
 }
 
 export default ListingDetailPage;

@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from .property import Property
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-from sqlalchemy import Boolean, Integer, String, func  # Add Integer and Boolean
+from sqlalchemy import Boolean, Integer, String, Text, func  # Add Text
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -55,6 +55,12 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now(), nullable=False
     )
+    # Profile fields
+    profile_picture_url: Mapped[Optional[str]] = mapped_column(
+        String(512), nullable=True
+    )
+    bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Relationships (will be defined later as other models are created)
     # Renaming this relationship to reflect the user who *listed* the property
@@ -107,6 +113,7 @@ class UserBase(BaseModel):
     first_name: Optional[str] = Field(None, max_length=100, example="John")
     last_name: Optional[str] = Field(None, max_length=100, example="Doe")
     phone_number: Optional[str] = Field(None, max_length=20, example="+1234567890")
+    # Add profile fields to base? Maybe not, keep them separate for clarity
 
 
 # Properties required for user creation
@@ -132,6 +139,10 @@ class UserResponse(UserBase):
     # Add agent fields to response
     reputation_points: int
     is_verified_agent: bool
+    # Add profile fields
+    profile_picture_url: Optional[str] = None
+    bio: Optional[str] = None
+    location: Optional[str] = None
 
 
 # Properties for updating a user (optional fields)
@@ -146,9 +157,45 @@ class UpdateUserRequest(BaseModel):
     # Allow admins to update agent status/reputation
     reputation_points: Optional[int] = None
     is_verified_agent: Optional[bool] = None
+    # Add profile fields for update
+    profile_picture_url: Optional[str] = Field(
+        None, max_length=512, example="http://example.com/new_pic.jpg"
+    )
+    bio: Optional[str] = Field(None, example="Updated bio about myself.")
+    location: Optional[str] = Field(
+        None, max_length=255, example="New City, New Country"
+    )
 
 
 # Response for login (e.g., could include a token later)
 class LoginResponse(BaseModel):
     message: str = "Login successful"
     user: UserResponse  # Include user details on successful login
+
+
+# Properties to return for public user profiles (excluding sensitive info)
+class PublicUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role: UserRole
+    # Agent specific public fields
+    reputation_points: Optional[int] = (
+        None  # Only include if role is AGENT? Or always show? Let's show if available.
+    )
+    is_verified_agent: Optional[bool] = (
+        None  # Only include if role is AGENT? Or always show? Let's show if available.
+    )
+    # Profile fields
+    profile_picture_url: Optional[str] = None
+    bio: Optional[str] = None
+    location: Optional[str] = None
+    created_at: datetime  # Show when user joined
+
+    # Example logic to conditionally include agent fields if needed later in route:
+    # @computed_field
+    # @property
+    # def reputation_points(self) -> Optional[int]:
+    #     return self.reputation_points if self.role == UserRole.AGENT else None

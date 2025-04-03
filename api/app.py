@@ -2,7 +2,6 @@ import logging
 import os
 
 import redis.asyncio as redis
-from redis.asyncio import Redis
 from config import get_config
 from models.base import ErrorDetail, ErrorResponse
 from quart import Quart, jsonify
@@ -143,6 +142,7 @@ def create_app(config_name=None):
         auth_routes,
         chat_routes,  # Import chat routes
         property_routes,
+        user_routes,  # Import user routes
     )
 
     # Example:
@@ -155,7 +155,9 @@ def create_app(config_name=None):
         admin_routes.bp
     )  # Register admin routes (prefix defined in admin_routes.py)
     app.register_blueprint(chat_routes.bp)  # Register chat routes
-    # app.register_blueprint(user_routes.bp, url_prefix='/users')
+    app.register_blueprint(
+        user_routes.bp
+    )  # Register user routes (prefix defined in user_routes.py)
 
     @app.route("/health")
     async def health_check():

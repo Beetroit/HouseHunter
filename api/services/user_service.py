@@ -155,3 +155,16 @@ class UserService:
     def get_password_hash(self, password: str) -> str:
         """Generate a hash for a plain password."""
         return pwd_context.hash(password)
+
+    async def get_public_user_profile(self, user_id: uuid.UUID) -> User:
+        """
+        Fetches a user by ID for public profile viewing.
+        Raises UserNotFoundException if not found.
+        """
+        # We can reuse get_user_by_id as it fetches the necessary user object
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            raise UserNotFoundException(f"User profile with ID {user_id} not found.")
+        # The route handler will be responsible for converting this User object
+        # to the PublicUserResponse schema before sending it to the client.
+        return user

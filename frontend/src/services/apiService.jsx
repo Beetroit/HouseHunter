@@ -265,6 +265,43 @@ const apiService = {
         }
     },
 
+    // --- User Profile API Calls ---
+
+    /**
+     * Fetches the public profile data for a specific user.
+     * @param {string} userId - The UUID of the user.
+     * @returns {Promise<object>} - The public user profile data (PublicUserResponse schema).
+     */
+    getUserProfile: async (userId) => {
+        console.log(`Fetching profile for user ID: ${userId}`);
+        try {
+            const response = await apiClient.get(`/users/${userId}/profile`);
+            console.log('Get user profile response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error(`Get User Profile API error (ID: ${userId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to fetch user profile');
+        }
+    },
+
+    /**
+     * Updates the profile of the currently authenticated user.
+     * @param {object} updateData - Data matching UpdateUserRequest schema (subset allowed by backend).
+     * @returns {Promise<object>} - The updated user data (UserResponse schema).
+     */
+    updateMyProfile: async (updateData) => {
+        console.log('Updating my profile with data:', updateData);
+        try {
+            // PUT request to /users/me
+            const response = await apiClient.put('/users/me', updateData);
+            console.log('Update profile response:', response.data);
+            return response.data; // Should be UserResponse
+        } catch (error) {
+            console.error('Update My Profile API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to update profile');
+        }
+    },
+
 };
 
 export default apiService;

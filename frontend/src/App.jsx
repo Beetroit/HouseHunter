@@ -1,17 +1,20 @@
 import React from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom'; // Ensure Navigate is imported
 import './App.css';
-import { useAuth } from './contexts/AuthContext'; // Ensure useAuth is imported
+import { useAuth } from './contexts/AuthContext.jsx'; // Ensure useAuth is imported
 
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'; // Use .jsx extension
-import ChatPage from './pages/ChatPage.jsx'; // Import the new ChatPage
+import ChatPage from './pages/ChatPage.jsx'; // Import the ChatPage
 import CreateListingPage from './pages/CreateListingPage.jsx'; // Use .jsx extension
 import DashboardPage from './pages/DashboardPage.jsx'; // Use .jsx extension
 import EditListingPage from './pages/EditListingPage.jsx'; // Use .jsx extension
+import EditProfilePage from './pages/EditProfilePage.jsx'; // Import EditProfilePage
 import HomePage from './pages/HomePage.jsx'; // Use .jsx extension
 import ListingDetailPage from './pages/ListingDetailPage';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import UserProfilePage from './pages/UserProfilePage.jsx'; // Import UserProfilePage
+
 
 // Placeholder components for other pages
 // Remove placeholder HomePage definition
@@ -68,9 +71,10 @@ function App() {
                             {(currentUser.role === 'agent' || currentUser.role === 'admin') && (
                                 <li><Link to="/create-listing">Create Listing</Link></li>
                             )}
+                            <li><Link to="/profile/edit">Edit Profile</Link></li> {/* Link to edit profile */}
                             <li><button onClick={logout}>Logout</button></li>
                             {/* Display user email or name if available */}
-                            {currentUser.email && <li style={{ color: 'white', marginLeft: 'auto', marginRight: '1rem' }}>{currentUser.email}</li>}
+                            {currentUser.email && <li style={{ color: 'white', marginLeft: 'auto', marginRight: '1rem' }}><Link to={`/profile/${currentUser.id}`} style={{ color: 'white', textDecoration: 'none' }}>{currentUser.email}</Link></li>} {/* Link to own profile */}
                         </>
                     ) : (
                         <>
@@ -98,6 +102,9 @@ function App() {
                     <Route path="/admin/dashboard" element={<ProtectedRoute><AdminRoute><AdminDashboardPage /></AdminRoute></ProtectedRoute>} />
                     {/* Add protected chat route */}
                     <Route path="/chat/:chatId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+                    {/* Add profile routes */}
+                    <Route path="/profile/edit" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
+                    <Route path="/profile/:userId" element={<UserProfilePage />} /> {/* Public profile view */}
                     <Route path="*" element={<NotFoundPage />} /> {/* Catch-all for 404 */}
                 </Routes>
             </main>

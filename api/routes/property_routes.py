@@ -1,0 +1,225 @@
+import uuid
+from typing import Optional  # Add Optional import
+
+from models.property import (
+    CreatePropertyRequest,
+    PaginatedPropertyResponse,
+    PropertyResponse,
+    UpdatePropertyRequest,
+)
+from models.user import User  # Import User for type hinting
+from pydantic import BaseModel, Field  # For query parameters model
+from quart import Blueprint, current_app
+from quart_auth import auth_required, current_user
+from quart_schema import validate_querystring, validate_request, validate_response
+from services.database import get_session
+from services.exceptions import (
+    InvalidRequestException,  # Add InvalidRequestException import
+    PropertyNotFoundException,
+    UnauthorizedException,
+    UserNotFoundException,
+)
+from services.property_service import PropertyService
+from services.user_service import UserService  # Needed to load full user object
+
+# Define the Blueprint
+bp = Blueprint("property", __name__, url_prefix="/properties")
+
+
+# --- Helper Function to Get Full User Object ---
+async def get_current_user_object() -> User:
+    """Helper to retrieve the full User object for the logged-in user."""
+    user_id_str = current_user.auth_id
+    if not user_id_str:
+        raise UnauthorizedException("Authentication required.")
+    try:
+        user_id = uuid.UUID(user_id_str)
+    except ValueError:
+        raise UnauthorizedException("Invalid user identifier in session.")
+
+    async with get_session() as db_session:
+        user_service = UserService(db_session)
+        user = await user_service.get_user_by_id(user_id)
+        if not user:
+            # This indicates an issue, maybe user deleted after login
+            raise UserNotFoundException(
+                "Authenticated user not found.", 401
+            )  # Use 401 as it's an auth issue
+        return user
+
+
+# --- Query Parameter Schema ---
+class ListPropertiesQueryArgs(BaseModel):
+    page: int = Field(default=1, ge=1)
+    per_page: int = Field(default=10, ge=1, le=100)  # Add max limit
+    # Add other filter fields here later (e.g., city: Optional[str] = None)
+
+
+# --- Routes ---
+
+
+@bp.route("", methods=["POST"])
+@auth_required
+@validate_request(CreatePropertyRequest)
+@validate_response(PropertyResponse, status_code=201)
+async def create_property(data: CreatePropertyRequest) -> PropertyResponse:
+    """Create a new property listing."""
+    requesting_user = await get_current_user_object()
+    async with get_session() as db_session:
+        property_service = PropertyService(db_session)
+        try:
+            # Pass the full requesting_user object to the service method
+            new_property = await property_service.create_property(
+                property_data=data, requesting_user=requesting_user
+            )
+            await db_session.commit()
+            current_app.logger.info(
+                f"Property created: {new_property.id} by user {requesting_user.id}"
+            )
+            # Convert SQLAlchemy model to Pydantic response model
+            return PropertyResponse.model_validate(new_property)
+        except Exception as e:
+            await db_session.rollback()
+            current_app.logger.error(f"Error creating property: {e}")
+            # Let global handler catch specific service exceptions or raise generic one
+            raise ValueError("Failed to create property due to an unexpected error.")
+
+
+@bp.route("", methods=["GET"])
+@validate_querystring(ListPropertiesQueryArgs)
+@validate_response(PaginatedPropertyResponse, status_code=200)
+async def list_properties(
+    query_args: ListPropertiesQueryArgs,
+) -> PaginatedPropertyResponse:
+    """List properties (publicly accessible, verified by default)."""
+    async with get_session() as db_session:
+        property_service = PropertyService(db_session)
+        items, total_items, total_pages = await property_service.list_properties(
+            page=query_args.page,
+            per_page=query_args.per_page,
+            only_verified=True,  # Public endpoint shows only verified
+            # Pass other filters from query_args here later
+        )
+        # Convert list of SQLAlchemy models to list of Pydantic models
+        property_responses = [PropertyResponse.model_validate(item) for item in items]
+        return PaginatedPropertyResponse(
+            items=property_responses,
+            total=total_items,
+            page=query_args.page,
+            per_page=query_args.per_page,
+            total_pages=total_pages,
+        )
+
+
+@bp.route("/my-listings", methods=["GET"])
+@auth_required
+@validate_querystring(ListPropertiesQueryArgs)  # Reuse pagination schema
+@validate_response(PaginatedPropertyResponse, status_code=200)
+async def list_my_properties(
+    query_args: ListPropertiesQueryArgs,
+) -> PaginatedPropertyResponse:
+    """List properties owned by the currently authenticated user."""
+    requesting_user = await get_current_user_object()
+    async with get_session() as db_session:
+        property_service = PropertyService(db_session)
+        items, total_items, total_pages = await property_service.list_properties(
+            page=query_args.page,
+            per_page=query_args.per_page,
+            only_verified=False,  # Owner can see all their properties regardless of status
+            owner_id=requesting_user.id,
+        )
+        property_responses = [PropertyResponse.model_validate(item) for item in items]
+        return PaginatedPropertyResponse(
+            items=property_responses,
+            total=total_items,
+            page=query_args.page,
+            per_page=query_args.per_page,
+            total_pages=total_pages,
+        )
+
+
+@bp.route("/<uuid:property_id>", methods=["GET"])
+@validate_response(PropertyResponse, status_code=200)
+async def get_property(property_id: uuid.UUID) -> PropertyResponse:
+    """Get details of a specific property."""
+    requesting_user: Optional[User] = None
+    try:
+        # Try to get user object if authenticated, but don't require it
+        if current_user.is_authenticated:
+            requesting_user = await get_current_user_object()
+    except UnauthorizedException:
+        pass  # Ignore if not authenticated or session invalid
+
+    async with get_session() as db_session:
+        property_service = PropertyService(db_session)
+        # Service method handles visibility check (verified or owner/admin)
+        prop = await property_service.get_property_by_id(property_id, requesting_user)
+        if not prop:
+            raise PropertyNotFoundException(
+                f"Property with ID {property_id} not found or access denied."
+            )
+        return PropertyResponse.model_validate(prop)
+
+
+@bp.route("/<uuid:property_id>", methods=["PUT"])
+@auth_required
+@validate_request(UpdatePropertyRequest)
+@validate_response(PropertyResponse, status_code=200)
+async def update_property(
+    property_id: uuid.UUID, data: UpdatePropertyRequest
+) -> PropertyResponse:
+    """Update a property listing (owner or admin only)."""
+    requesting_user = await get_current_user_object()
+    async with get_session() as db_session:
+        property_service = PropertyService(db_session)
+        try:
+            updated_property = await property_service.update_property(
+                property_id, data, requesting_user
+            )
+            await db_session.commit()
+            current_app.logger.info(
+                f"Property updated: {property_id} by user {requesting_user.id}"
+            )
+            return PropertyResponse.model_validate(updated_property)
+        except (
+            PropertyNotFoundException,
+            UnauthorizedException,
+            InvalidRequestException,
+        ) as e:
+            await db_session.rollback()  # Rollback on known errors
+            raise e  # Let global handler format the response
+        except Exception as e:
+            await db_session.rollback()
+            current_app.logger.error(f"Error updating property {property_id}: {e}")
+            raise ValueError("Failed to update property due to an unexpected error.")
+
+
+@bp.route("/<uuid:property_id>", methods=["DELETE"])
+@auth_required
+@validate_response(status_code=204)  # No content on successful delete
+async def delete_property(property_id: uuid.UUID):
+    """Delete a property listing (owner or admin only)."""
+    requesting_user = await get_current_user_object()
+    async with get_session() as db_session:
+        property_service = PropertyService(db_session)
+        try:
+            success = await property_service.delete_property(
+                property_id, requesting_user
+            )
+            if success:
+                await db_session.commit()
+                current_app.logger.info(
+                    f"Property deleted: {property_id} by user {requesting_user.id}"
+                )
+                return "", 204  # No content response
+            else:
+                # Should ideally be caught by specific exceptions from service
+                await db_session.rollback()
+                raise ValueError("Failed to delete property.")
+        except (PropertyNotFoundException, UnauthorizedException) as e:
+            await db_session.rollback()
+            raise e  # Let global handler format response
+        except Exception as e:
+            await db_session.rollback()
+            current_app.logger.error(f"Error deleting property {property_id}: {e}")
+            raise ValueError("Failed to delete property due to an unexpected error.")

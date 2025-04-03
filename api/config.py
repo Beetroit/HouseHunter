@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 
 from dotenv import load_dotenv
+import rich
 
 # Load environment variables from .env file
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -129,6 +130,7 @@ config_by_name = dict(
 def get_config():
     """Helper function to get the configuration object based on QUART_CONFIG environment variable."""
     config_name = os.getenv("QUART_CONFIG", "default")
+    rich.print(f"Loading config: {config_name}")
     return config_by_name.get(config_name, DevelopmentConfig)()
 
 

@@ -350,6 +350,52 @@ const apiService = {
         }
     },
 
+    // --- Favorite Functions ---
+
+    /**
+     * Adds a property to the current user's favorites.
+     * @param {string} propertyId - The UUID of the property to favorite.
+     * @returns {Promise<object>} - The Axios response (likely 204 No Content).
+     */
+    addFavorite: async (propertyId) => {
+        try {
+            const response = await apiClient.post(`/properties/${propertyId}/favorite`);
+            return response; // Returns 204 No Content on success
+        } catch (error) {
+            console.error("Error adding favorite:", error.response?.data || error.message);
+            throw error.response?.data || error;
+        }
+    },
+
+    /**
+     * Removes a property from the current user's favorites.
+     * @param {string} propertyId - The UUID of the property to unfavorite.
+     * @returns {Promise<object>} - The Axios response (likely 204 No Content).
+     */
+    removeFavorite: async (propertyId) => {
+        try {
+            const response = await apiClient.delete(`/properties/${propertyId}/favorite`);
+            return response; // Returns 204 No Content on success
+        } catch (error) {
+            console.error("Error removing favorite:", error.response?.data || error.message);
+            throw error.response?.data || error;
+        }
+    },
+
+    /**
+     * Fetches the list of properties favorited by the current user.
+     * @returns {Promise<Array<object>>} - An array of PropertyResponse objects.
+     */
+    getMyFavorites: async () => {
+        try {
+            const response = await apiClient.get("/users/me/favorites");
+            return response.data; // Returns list of PropertyResponse objects
+        } catch (error) {
+            console.error("Error fetching favorites:", error.response?.data || error.message);
+            throw error.response?.data || error;
+        }
+    },
+
 };
 
 export default apiService;

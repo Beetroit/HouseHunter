@@ -94,3 +94,21 @@ class ChatNotFoundException(ServiceException):
 
     def __init__(self, message: str = "Chat not found", status_code: int = 404):
         super().__init__(message, status_code)
+
+
+class FavoriteAlreadyExistsException(ServiceException):
+    """Raised when trying to add a favorite that already exists."""
+
+    def __init__(
+        self, message: str = "Property already favorited", status_code: int = 409
+    ):  # 409 Conflict
+        super().__init__(message, status_code)
+
+
+class FavoriteNotFoundException(ServiceException):
+    """Raised when trying to remove a favorite that does not exist."""
+
+    def __init__(
+        self, message: str = "Favorite not found", status_code: int = 404
+    ):  # 404 Not Found
+        super().__init__(message, status_code)

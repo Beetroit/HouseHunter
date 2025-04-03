@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom'; // Import useParams & useNavigate
-import { useAuth } from '../contexts/AuthContext.jsx'; // Import useAuth
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import apiService from '../services/apiService.jsx';
 import './ListingStyles.css'; // Reuse listing styles
 
@@ -11,6 +11,10 @@ function ListingDetailPage() {
     const [error, setError] = useState('');
     const [chatError, setChatError] = useState(''); // Separate error state for chat initiation
     const [isInitiatingChat, setIsInitiatingChat] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [favoritesLoading, setFavoritesLoading] = useState(false); // Loading state for initial favorites check
+    const [toggleFavoriteLoading, setToggleFavoriteLoading] = useState(false); // Loading state for add/remove action
+    const [favoriteError, setFavoriteError] = useState('');
     const { currentUser } = useAuth(); // Get current user
     const navigate = useNavigate(); // Hook for navigation
 
@@ -37,6 +41,29 @@ function ListingDetailPage() {
         fetchListingDetails();
     }, [id]); // Re-run effect if the ID changes
 
+    useEffect(() => {
+        const checkFavoriteStatus = async () => {
+            if (!currentUser || !id) return; // Only check if logged in and listing ID is available
+
+            setFavoritesLoading(true);
+            setFavoriteError('');
+            try {
+                const favorites = await apiService.getMyFavorites();
+                // Check if the current listing ID is in the user's favorites
+                const isFav = favorites.some(favProperty => favProperty.id === parseInt(id, 10)); // Ensure ID is compared as number if needed
+                setIsFavorite(isFav);
+            } catch (err) {
+                console.error("Failed to fetch user favorites:", err);
+                // Don't block the page for this, but maybe show a subtle error
+                setFavoriteError("Could not check favorite status.");
+            } finally {
+                setFavoritesLoading(false);
+            }
+        };
+
+        checkFavoriteStatus();
+    }, [id, currentUser]); // Rerun if listing ID or user changes
+
     if (loading) {
         return <p>Loading listing details...</p>;
     }
@@ -57,6 +84,20 @@ function ListingDetailPage() {
     return (
         <div className="listing-detail-container">
             <h2>{listing.title}</h2>
+
+            {/* Favorite Button - Show only if logged in */}
+            {currentUser && (
+                <button
+                    onClick={handleToggleFavorite}
+                    disabled={favoritesLoading || toggleFavoriteLoading}
+                    className={`favorite-button ${isFavorite ? 'favorited' : ''}`} // Add classes for styling
+                    style={{ marginBottom: '1rem' }} // Basic styling
+                >
+                    {toggleFavoriteLoading ? 'Updating...' : (isFavorite ? '★ Remove from Favorites' : '☆ Add to Favorites')}
+                </button>
+            )}
+            {favoriteError && <p className="error-message" style={{ color: 'orange' }}>{favoriteError}</p>}
+
 
             {/* Image Display Section */}
             <div className="listing-images" style={{ marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
@@ -115,10 +156,10 @@ function ListingDetailPage() {
             )}
 
             {/* TODO: Add "Edit/Delete" buttons if current user is owner/lister/admin */}
-            {/* TODO: Add "Verify/Reject" buttons if current user is admin */}
+            {/* TODO: Add "Verify/Reject" buttons if current user is admin? (Already on AdminDashboard) */}
 
             <Link to="/">Back to Listings</Link>
-            <Link to="/">Back to Listings</Link>
+            {/* Removed duplicate link */}
         </div>
     );
 
@@ -141,6 +182,28 @@ function ListingDetailPage() {
             setChatError(err.message || "Could not start chat.");
         } finally {
             setIsInitiatingChat(false);
+        }
+    }
+
+    // Handler for toggling favorite status
+    async function handleToggleFavorite() {
+        if (!currentUser || !id) return;
+
+        setToggleFavoriteLoading(true);
+        setFavoriteError('');
+        try {
+            if (isFavorite) {
+                await apiService.removeFavorite(id);
+                setIsFavorite(false);
+            } else {
+                await apiService.addFavorite(id);
+                setIsFavorite(true);
+            }
+        } catch (err) {
+            console.error("Failed to toggle favorite:", err);
+            setFavoriteError(err.message || "Could not update favorite status.");
+        } finally {
+            setToggleFavoriteLoading(false);
         }
     }
 }

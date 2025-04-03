@@ -7,13 +7,14 @@ import AdminDashboardPage from './pages/AdminDashboardPage.jsx'; // Use .jsx ext
 import ChatPage from './pages/ChatPage.jsx'; // Import the ChatPage
 import CreateListingPage from './pages/CreateListingPage.jsx'; // Use .jsx extension
 import DashboardPage from './pages/DashboardPage.jsx'; // Use .jsx extension
-import EditListingPage from './pages/EditListingPage.jsx'; // Use .jsx extension
-import EditProfilePage from './pages/EditProfilePage.jsx'; // Import EditProfilePage
-import HomePage from './pages/HomePage.jsx'; // Use .jsx extension
+import EditListingPage from './pages/EditListingPage.jsx';
+import EditProfilePage from './pages/EditProfilePage.jsx';
+import FavoritesPage from './pages/FavoritesPage.jsx'; // Import FavoritesPage
+import HomePage from './pages/HomePage.jsx';
 import ListingDetailPage from './pages/ListingDetailPage';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
-import UserProfilePage from './pages/UserProfilePage.jsx'; // Import UserProfilePage
+import UserProfilePage from './pages/UserProfilePage.jsx';
 
 
 // Placeholder components for other pages
@@ -71,6 +72,7 @@ function App() {
                             {(currentUser.role === 'agent' || currentUser.role === 'admin') && (
                                 <li><Link to="/create-listing">Create Listing</Link></li>
                             )}
+                            <li><Link to="/favorites">My Favorites</Link></li> {/* Link to Favorites page */}
                             <li><Link to="/profile/edit">Edit Profile</Link></li> {/* Link to edit profile */}
                             <li><button onClick={logout}>Logout</button></li>
                             {/* Display user email or name if available */}
@@ -105,6 +107,8 @@ function App() {
                     {/* Add profile routes */}
                     <Route path="/profile/edit" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
                     <Route path="/profile/:userId" element={<UserProfilePage />} /> {/* Public profile view */}
+                    {/* Add protected favorites route */}
+                    <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
                     <Route path="*" element={<NotFoundPage />} /> {/* Catch-all for 404 */}
                 </Routes>
             </main>

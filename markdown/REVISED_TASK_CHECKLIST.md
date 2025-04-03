@@ -47,7 +47,7 @@
         *   [x] Implemented `UserService` with methods for user CRUD and password handling for initial roles.
             *   *Summary (2025-04-03):* Created `api/services/user_service.py`.
         *   [x] Update service methods if needed to handle `AGENT` role specifics (e.g., setting `is_verified_agent`).
-            *   *Summary (2025-04-03):* Added admin check to `UserService.update_user` to protect sensitive fields (`role`, `reputation_points`, `is_verified_agent`). Confirmed no routes currently call this method.
+            *   *Summary (2025-04-03):* Added admin check to `UserService.update_user` to protect sensitive fields (`role`, `reputation_points`, `is_verified_agent`). Confirmed no routes currently call this method. Added `get_public_user_profile` method.
 -   [x] **Authentication (`api/`):**
     *   [x] `routes/auth_routes.py`: Implemented registration, login, logout, and get current user endpoints.
         *   *Summary (2025-04-03):* Created `api/routes/auth_routes.py`.
@@ -159,7 +159,8 @@
 -   [ ] **CI/CD:** Set up pipeline.
 -   [ ] **Implement Suggested Features:**
     *   [ ] Advanced Search & Filtering
-    *   [ ] User Profiles (including Agent profiles with reputation)
+    *   [x] User Profiles (including Agent profiles with reputation)
+        *   *Summary (2025-04-03):* Added profile fields to User model/schemas. Implemented UserService method. Created backend routes (/users/me, /users/{id}/profile). Added frontend API calls, UserProfilePage, EditProfilePage, and routing/navigation.
     *   [ ] Notifications (In-app/Email)
     *   [ ] Image Uploads
     *   [ ] Map Integration (Google Maps)

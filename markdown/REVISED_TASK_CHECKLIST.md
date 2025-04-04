@@ -168,6 +168,18 @@
   * [ ] Saved Listings/Favorites
   * [X] Reviews/Ratings (for Agents/Properties)
     * *Summary (2025-04-04):* Added Review model, service, and routes to backend. Added ReviewForm component and integrated review display/submission into UserProfilePage on frontend.
+  - [ ] **Chat Enhancements (User-to-User & List Page):**
+    * [ ] Backend: Make `Chat.property_id` nullable (DB migration needed).
+    * [ ] Backend: Add `find_or_create_direct_chat` method to `ChatService`.
+    * [ ] Backend: Verify/Update `get_user_chats` method in `ChatService`.
+    * [ ] Backend: Add `GET /api/chat/my-sessions` route.
+    * [ ] Backend: Add `POST /api/chat/initiate/direct/<uuid:recipient_user_id>` route.
+    * [ ] Backend: Add `PaginatedChatResponse` schema.
+    * [ ] Frontend: Add `getMyChatSessions` function to `apiService`.
+    * [ ] Frontend: Add `initiateDirectChat` function to `apiService`.
+    * [ ] Frontend: Create `ChatsListPage.jsx` component and styles.
+    * [ ] Frontend: Add `/chats` route and navigation link.
+    * [ ] Frontend: Add "Message Me" button and logic to `UserProfilePage.jsx`.
 - [X] **Vite Migration (`frontend/`):** Migrated frontend build system from Create React App to Vite.
   * *Summary (2025-04-03):* Uninstalled `react-scripts`, installed `vite` & `@vitejs/plugin-react`. Updated `package.json` scripts & type. Moved & updated `index.html`. Renamed entry point to `main.jsx`. Created `vite.config.js` with proxy. Updated `apiService.jsx` base URL. Renamed all `.js` component files containing JSX to `.jsx` and updated imports. Removed `reportWebVitals`.
   * *Note (2025-04-04):* The `vite.config.js` proxy must include entries for all API path prefixes (e.g., `/auth`, `/properties`, `/admin`, `/users`, `/chat`) to ensure the dev server forwards requests correctly to the backend. Update this list if new top-level API routes are added.

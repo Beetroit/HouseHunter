@@ -1,0 +1,77 @@
+/* frontend/src/pages/ChatsListStyles.css */
+
+.chats-list-container {
+    max-width: 800px;
+    margin: var(--spacing-xl) auto;
+    padding: var(--spacing-lg);
+    /* Optional: Add glass effect to container */
+    /* background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow-lg); */
+}
+
+.chats-list-container h2 {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.chats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.chat-list-item {
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    transition: background-color 0.2s ease-in-out;
+    background: var(--glass-bg);
+    /* Use glass background */
+    border: 1px solid var(--glass-border-color);
+}
+
+.chat-list-item:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    /* Slightly lighter on hover */
+}
+
+.chat-list-item a {
+    display: block;
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-decoration: none;
+    color: var(--text-color);
+}
+
+.chat-list-item a:hover {
+    text-decoration: none;
+    /* No underline needed for list items */
+}
+
+.chat-item-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
+    gap: var(--spacing-sm);
+}
+
+.chat-participant-name {
+    font-weight: 500;
+    font-size: 1.05rem;
+}
+
+.chat-last-updated {
+    font-size: 0.8rem;
+    color: var(--text-color-muted);
+    white-space: nowrap;
+    /* Prevent wrapping */
+}
+
+/* Inherit pagination styles from ListingStyles.css or define here if needed */
+/* .pagination-controls { ... } */

@@ -5,6 +5,7 @@ import { useAuth } from './contexts/AuthContext.jsx'; // Ensure useAuth is impor
 
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'; // Use .jsx extension
 import ChatPage from './pages/ChatPage.jsx'; // Import the ChatPage
+import ChatsListPage from './pages/ChatsListPage.jsx'; // Import the new page component
 import CreateListingPage from './pages/CreateListingPage.jsx'; // Use .jsx extension
 import DashboardPage from './pages/DashboardPage.jsx'; // Use .jsx extension
 import EditListingPage from './pages/EditListingPage.jsx';
@@ -66,6 +67,8 @@ function App() {
                     {currentUser ? (
                         <>
                             <li><Link to="/dashboard">Dashboard</Link></li>
+                            {/* Add Chats link */}
+                            <li><Link to="/chats">My Chats</Link></li>
                             {/* Add Admin Dashboard link if user is admin */}
                             {currentUser.role === 'admin' && <li><Link to="/admin/dashboard">Admin Dashboard</Link></li>}
                             {/* Show Create Listing link only to agents or admins */}
@@ -109,6 +112,8 @@ function App() {
                     <Route path="/profile/:userId" element={<UserProfilePage />} /> {/* Public profile view */}
                     {/* Add protected favorites route */}
                     <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+                    {/* Add protected route for Chats List */}
+                    <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
                     <Route path="*" element={<NotFoundPage />} /> {/* Catch-all for 404 */}
                 </Routes>
             </main>

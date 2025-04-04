@@ -8,6 +8,7 @@ from models.chat import (  # Import ChatResponse & PaginatedChatMessageResponse
     ChatResponse,
     CreateChatMessageRequest,
     PaginatedChatMessageResponse,
+    PaginatedChatResponse,  # Added
 )
 from models.user import User  # Import User model
 from pydantic import BaseModel, Field  # For query params
@@ -27,6 +28,7 @@ from services.exceptions import (  # Import more exceptions
     InvalidRequestException,
     PropertyNotFoundException,
     UnauthorizedException,
+    UserNotFoundException,  # Added
 )
 
 # Removed UserService import as it's now used within the helper
@@ -76,6 +78,83 @@ async def initiate_chat(property_id: uuid.UUID):
             )
             raise ChatException(
                 "Failed to initiate chat session due to an unexpected error."
+            )
+
+
+# --- HTTP Route for Getting User's Chat Sessions ---
+class GetChatsQueryArgs(BaseModel):  # Renamed from GetMessagesQueryArgs for clarity
+    page: int = Field(default=1, ge=1)
+    per_page: int = Field(default=20, ge=1, le=100)  # Default 20 for list view
+
+
+@bp.route("/my-sessions", methods=["GET"])
+@login_required
+@validate_querystring(GetChatsQueryArgs)
+@validate_response(PaginatedChatResponse)  # Use the new paginated schema
+@tag(["Chat"])
+async def get_my_chat_sessions(query_args: GetChatsQueryArgs):
+    """Fetches all chat sessions for the currently authenticated user."""
+    requesting_user = await get_current_user_object()
+    async with get_session() as db_session:
+        chat_service = ChatService(db_session)
+        try:
+            items, total_items, total_pages = await chat_service.get_user_chats(
+                user=requesting_user,
+                page=query_args.page,
+                per_page=query_args.per_page,
+            )
+            # Convert DB models to Pydantic response models
+            chat_responses = [ChatResponse.model_validate(item) for item in items]
+            return PaginatedChatResponse(
+                items=chat_responses,
+                total=total_items,
+                page=query_args.page,
+                per_page=query_args.per_page,
+                total_pages=total_pages,
+            )
+        except Exception as e:
+            current_app.logger.error(
+                f"Error fetching chat sessions for user {requesting_user.id}: {e}",
+                exc_info=True,
+            )
+            raise ChatException("Failed to fetch chat sessions.")
+
+
+# --- HTTP Route for Initiating Direct Chat ---
+@bp.route("/initiate/direct/<uuid:recipient_user_id>", methods=["POST"])
+@login_required
+@validate_response(ChatResponse, status_code=200)  # 200 OK for find or create
+@tag(["Chat"])
+async def initiate_direct_chat(recipient_user_id: uuid.UUID):
+    """
+    Finds or creates a direct chat session between the current user and the recipient user.
+    Returns the chat session details including the ID.
+    """
+    requesting_user = await get_current_user_object()
+    async with get_session() as db_session:
+        chat_service = ChatService(db_session)
+        try:
+            chat_session = await chat_service.find_or_create_direct_chat(
+                initiator_user=requesting_user, recipient_user_id=recipient_user_id
+            )
+            await db_session.commit()  # Commit if a new chat was created
+            current_app.logger.info(
+                f"User {requesting_user.id} initiated/found direct chat {chat_session.id} with user {recipient_user_id}"
+            )
+            # Return the full chat details using Pydantic model validation
+            return ChatResponse.model_validate(chat_session).model_dump(), 200
+        except (UserNotFoundException, InvalidRequestException, ChatException) as e:
+            # Let the global handler manage these specific errors
+            await db_session.rollback()
+            raise e
+        except Exception as e:
+            await db_session.rollback()
+            current_app.logger.error(
+                f"Error initiating direct chat between {requesting_user.id} and {recipient_user_id}: {e}",
+                exc_info=True,
+            )
+            raise ChatException(
+                "Failed to initiate direct chat session due to an unexpected error."
             )
 
 

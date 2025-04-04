@@ -16,6 +16,7 @@ from services.exceptions import (
     InvalidRequestException,
     PropertyNotFoundException,
     UnauthorizedException,
+    UserNotFoundException,  # Added
 )
 
 
@@ -102,6 +103,74 @@ class ChatService:
             await self.session.rollback()
             # Consider logging the error
             raise ChatException(f"Could not create chat session: {e}") from e
+
+    async def find_or_create_direct_chat(
+        self, initiator_user: User, recipient_user_id: uuid.UUID
+    ) -> Chat:
+        """
+        Finds an existing direct chat (property_id is NULL) between two users,
+        or creates a new one if it doesn't exist.
+        """
+        # 1. Fetch the recipient user
+        recipient_user = await self.session.get(User, recipient_user_id)
+        if not recipient_user:
+            raise UserNotFoundException(
+                f"Recipient user with ID {recipient_user_id} not found."
+            )
+
+        # 2. Prevent user from chatting with themselves
+        if initiator_user.id == recipient_user.id:
+            raise InvalidRequestException(
+                "Cannot initiate a direct chat with yourself."
+            )
+
+        # 3. Check for existing direct chat (property_id IS NULL)
+        existing_chat_stmt = (
+            select(Chat)
+            .options(selectinload(Chat.initiator), selectinload(Chat.property_user))
+            .where(
+                Chat.property_id.is_(None)
+            )  # Key difference: check for NULL property_id
+            .where(
+                or_(
+                    (Chat.initiator_id == initiator_user.id)
+                    & (Chat.property_user_id == recipient_user.id),
+                    (Chat.initiator_id == recipient_user.id)
+                    & (Chat.property_user_id == initiator_user.id),
+                )
+            )
+        )
+        existing_chat_result = await self.session.execute(existing_chat_stmt)
+        existing_chat = existing_chat_result.scalar_one_or_none()
+
+        if existing_chat:
+            # Ensure relationships are loaded if needed later
+            if not hasattr(existing_chat, "initiator") or not hasattr(
+                existing_chat, "property_user"
+            ):
+                await self.session.refresh(
+                    existing_chat, attribute_names=["initiator", "property_user"]
+                )
+            return existing_chat
+
+        # 4. Create new direct chat if none exists
+        new_chat = Chat(
+            property_id=None,  # Explicitly set to None
+            initiator_id=initiator_user.id,
+            property_user_id=recipient_user.id,  # The other user
+        )
+        self.session.add(new_chat)
+        try:
+            await self.session.flush()
+            # Refresh to get IDs and load relationships
+            await self.session.refresh(
+                new_chat, attribute_names=["id", "initiator", "property_user"]
+            )
+            return new_chat
+        except Exception as e:
+            await self.session.rollback()
+            # Consider logging the error
+            raise ChatException(f"Could not create direct chat session: {e}") from e
 
     async def get_chat_by_id(self, chat_id: uuid.UUID, requesting_user: User) -> Chat:
         """

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional  # Import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text, func
@@ -28,7 +28,7 @@ class Chat(Base):
     property_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("properties.id", name="fk_chats_property_id_properties"),
         index=True,
-        nullable=False,
+        nullable=True,  # Allow null for direct user-to-user chats
     )
     # User who initiated the chat (usually the interested party)
     initiator_id: Mapped[uuid.UUID] = mapped_column(
@@ -131,7 +131,7 @@ class ChatResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    property_id: uuid.UUID
+    property_id: Optional[uuid.UUID]  # Make optional in response too
     initiator_id: uuid.UUID
     property_user_id: uuid.UUID
     created_at: datetime
@@ -152,6 +152,15 @@ class InitiateChatRequest(BaseModel):
 # Schema for paginated message history
 class PaginatedChatMessageResponse(BaseModel):
     items: List[ChatMessageResponse]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+
+
+# Schema for paginated chat sessions
+class PaginatedChatResponse(BaseModel):
+    items: List[ChatResponse]
     total: int
     page: int
     per_page: int

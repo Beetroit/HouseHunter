@@ -21,11 +21,10 @@ from services.exceptions import (
     UserNotFoundException,
 )
 from services.user_service import UserService
-
 from utils.auth_helpers import get_current_user_object  # Import shared helper
 
 # Define the Blueprint
-bp = Blueprint("auth", __name__, url_prefix="/auth")
+bp = Blueprint("auth", __name__)  # Removed url_prefix
 
 
 @bp.route("/register", methods=["POST"])

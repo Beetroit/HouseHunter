@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
@@ -21,9 +21,7 @@ class Favorite(Base):
     property_id: Mapped[int] = mapped_column(
         ForeignKey("properties.id", ondelete="CASCADE"), primary_key=True
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        default=datetime.datetime.now(datetime.UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="favorites")
@@ -54,6 +52,6 @@ class FavoriteCreate(FavoriteBase):
 class FavoriteResponse(FavoriteBase):
     model_config = ConfigDict(from_attributes=True)
 
-    created_at: datetime.datetime
+    created_at: datetime
     # Optionally include nested property details if needed directly
     # property: PropertyResponse | None = None

@@ -31,8 +31,10 @@ function useChatWebSocket(chatId) {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // Assuming backend runs on the same host/port or is proxied
         // Adjust if your API/WebSocket server is elsewhere
-        const wsUrl = `${wsProtocol}//${window.location.host}/chat/ws/${chatId}`;
-        // const wsUrl = `ws://localhost:5000/chat/ws/${chatId}`; // Or specific if not proxied
+        // Connect directly to the backend WS endpoint, bypassing Vite proxy for WS
+        const backendHost = window.location.hostname; // Assuming backend is on the same host
+        const backendPort = 5000; // Backend port
+        const wsUrl = `${wsProtocol}//${backendHost}:${backendPort}/api/chat/ws/${chatId}`;
 
         console.log(`Connecting WebSocket to ${wsUrl}`);
         setConnectionStatus('Connecting');

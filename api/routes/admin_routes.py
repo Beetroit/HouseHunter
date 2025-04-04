@@ -11,7 +11,7 @@ from services.property_service import PropertyService
 from utils.decorators import admin_required  # Import the admin decorator
 
 # Define the Blueprint
-bp = Blueprint("admin", __name__, url_prefix="/admin")
+bp = Blueprint("admin", __name__)  # Removed url_prefix
 
 
 # --- Query Parameter Schema ---

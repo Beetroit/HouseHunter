@@ -27,7 +27,7 @@ from services.property_service import PropertyService
 from utils.auth_helpers import get_current_user_object  # Import shared helper
 
 # Define the Blueprint
-bp = Blueprint("property", __name__, url_prefix="/properties")
+bp = Blueprint("property", __name__)  # Removed url_prefix
 
 
 # Removed local helper function definition, using shared one from api.utils.auth_helpers
@@ -41,7 +41,7 @@ class ListPropertiesQueryArgs(BaseModel):
 # --- Routes ---
 
 
-@bp.route("", methods=["POST"])
+@bp.route("/", methods=["POST"])
 @login_required
 @validate_request(CreatePropertyRequest)
 @validate_response(PropertyResponse, status_code=201)
@@ -70,7 +70,7 @@ async def create_property(data: CreatePropertyRequest) -> PropertyResponse:
             raise ValueError("Failed to create property due to an unexpected error.")
 
 
-@bp.route("", methods=["GET"])
+@bp.route("/", methods=["GET"])
 @validate_querystring(ListPropertiesQueryArgs)
 @validate_response(PaginatedPropertyResponse, status_code=200)
 @tag(["Property"])

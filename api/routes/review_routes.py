@@ -25,7 +25,7 @@ from services.exceptions import (
 from services.review_service import ReviewService
 from utils.auth_helpers import get_current_user_object
 
-bp = Blueprint("review", __name__, url_prefix="/api")
+bp = Blueprint("review", __name__)  # Removed url_prefix
 
 
 # --- Query Parameter Schema ---

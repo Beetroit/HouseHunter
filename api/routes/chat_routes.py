@@ -32,7 +32,7 @@ from services.exceptions import (  # Import more exceptions
 # Removed UserService import as it's now used within the helper
 from utils.auth_helpers import get_current_user_object  # Import shared helper
 
-bp = Blueprint("chat", __name__, url_prefix="/chat")
+bp = Blueprint("chat", __name__)  # Removed url_prefix
 
 # Removed in-memory active_connections dictionary in favor of Redis Pub/Sub
 

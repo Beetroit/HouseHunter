@@ -168,17 +168,15 @@ async def handle_generic_exception(error: Exception):
 
 # Example:
 # from routes import user_routes, property_routes
-app.register_blueprint(auth_routes.bp)  # Prefix is defined in auth_routes.py
-app.register_blueprint(property_routes.bp)  # Prefix is defined in property_routes.py
-app.register_blueprint(
-    admin_routes.bp
-)  # Register admin routes (prefix defined in admin_routes.py)
-app.register_blueprint(chat_routes.bp)  # Register chat routes
-app.register_blueprint(
-    user_routes.bp
-)  # Register user routes (prefix defined in user_routes.py)
-app.register_blueprint(favorite_routes.bp)  # Register favorite routes
-app.register_blueprint(review_routes.bp)  # Register review routes
+app.register_blueprint(auth_routes.bp, url_prefix="/api/auth")
+app.register_blueprint(property_routes.bp, url_prefix="/api/properties")
+app.register_blueprint(admin_routes.bp, url_prefix="/api/admin")
+app.register_blueprint(chat_routes.bp, url_prefix="/api/chat")
+app.register_blueprint(user_routes.bp, url_prefix="/api/users")
+# Register favorites at root /api as its routes define full paths relative to other resources
+app.register_blueprint(favorite_routes.bp, url_prefix="/api")
+# Register reviews under /api/users as its routes are relative to users
+app.register_blueprint(review_routes.bp, url_prefix="/api/users")
 
 
 @app.route("/health")

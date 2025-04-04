@@ -10,29 +10,12 @@ export default defineConfig({
         open: true, // Automatically open browser
         // Proxy API requests to the backend during development
         proxy: {
-            // Requests starting with /auth, /properties, /admin, etc. will be proxied
-            // Adjust the context array if you add more top-level API paths
-            '/auth': {
+            // Single proxy rule for all API calls
+            '/api': {
                 target: 'http://localhost:5000', // Your backend address
                 changeOrigin: true,
+                // No rewrite needed, backend now expects /api prefix
             },
-            '/properties': {
-                target: 'http://localhost:5000',
-                changeOrigin: true,
-            },
-            '/admin': {
-                target: 'http://localhost:5000',
-                changeOrigin: true,
-            },
-            '/users': { // Added for user profile, favorites, etc.
-                target: 'http://localhost:5000',
-                changeOrigin: true,
-            },
-            '/chat': { // Added for chat initiation, messages
-                target: 'http://localhost:5000',
-                changeOrigin: true,
-            },
-            // Add other API prefixes if needed
         }
     }
 });

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime  # Import datetime
+from datetime import datetime, timezone  # Import datetime
 from math import ceil
 from typing import List, Tuple
 
@@ -202,7 +202,7 @@ class ChatService:
 
         # Explicitly update chat timestamp
         # Use timezone aware now if your DB/models support it, else utcnow
-        chat.updated_at = datetime.now(datetime.UTC)  # Use timezone aware UTC now
+        chat.updated_at = datetime.now(timezone.utc)  # Use timezone aware UTC now
 
         self.session.add(new_message)
         try:
@@ -242,9 +242,13 @@ class ChatService:
         )
 
         # Count total messages
-        count_query = select(func.count(ChatMessage.id)).select_from(
-            base_query.subquery()
+        # Count total messages - Apply filter directly
+        count_query = (
+            select(func.count(ChatMessage.id))
+            .select_from(ChatMessage)
+            .where(ChatMessage.chat_id == chat_id)
         )
+        # Old version: count_query = select(func.count(ChatMessage.id)).select_from(base_query.subquery())
         total_result = await self.session.execute(count_query)
         total_items = total_result.scalar_one_or_none() or 0
         total_pages = (
@@ -296,7 +300,7 @@ class ChatService:
                 chat_update_stmt = (
                     update(Chat)
                     .where(Chat.id == chat_id)
-                    .values(updated_at=datetime.now(datetime.UTC))
+                    .values(updated_at=datetime.now(timezone.utc))
                     .execution_options(synchronize_session=False)
                 )
                 await self.session.execute(chat_update_stmt)

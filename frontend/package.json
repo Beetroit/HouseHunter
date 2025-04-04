@@ -14,7 +14,7 @@
         "web-vitals": "^2.1.4"
     },
     "scripts": {
-        "dev": "vite",
+        "dev": "vite --no-open",
         "build": "vite build",
         "test": "react-scripts test",
         "preview": "vite preview"

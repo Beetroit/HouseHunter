@@ -6,11 +6,11 @@ import axios from 'axios';
 // For production builds, ensure the web server serving the frontend also proxies
 // these paths to the backend API server.
 // const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/'; // Use '/' if proxy handles all paths
-const API_BASE_URL = '/'; // Let the proxy handle the full path based on context
+const API_BASE_URL = '/api'; // Use /api prefix for all calls
 
 // Create an Axios instance with default settings
 const apiClient = axios.create({
-    baseURL: API_BASE_URL, // This will now be just '/'
+    baseURL: API_BASE_URL, // This will now be '/api'
     headers: {
         'Content-Type': 'application/json',
     },

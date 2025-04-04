@@ -11,11 +11,10 @@ from services.exceptions import (
     UserNotFoundException,
 )
 from services.user_service import UserService  # Re-add UserService import
-
 from utils.auth_helpers import get_current_user_object  # Import shared helper
 
 # Define the Blueprint
-bp = Blueprint("user", __name__, url_prefix="/users")
+bp = Blueprint("user", __name__)  # Removed url_prefix
 
 
 # Removed local helper function definition, using shared one from api.utils.auth_helpers

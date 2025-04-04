@@ -382,6 +382,40 @@ const apiService = {
         }
     },
 
+    // --- Review Functions ---
+
+    /**
+     * Creates a review for a specific agent.
+     * @param {string} agentId - The UUID of the agent being reviewed.
+     * @param {object} reviewData - { rating: number, comment?: string }
+     * @returns {Promise<object>} - The created review data (ReviewResponse schema).
+     */
+    createReview: async (agentId, reviewData) => {
+        try {
+            const response = await apiClient.post(`/users/${agentId}/reviews`, reviewData);
+            return response.data; // Should be ReviewResponse
+        } catch (error) {
+            console.error(`Error creating review for agent ${agentId}:`, error.response?.data || error.message);
+            throw error.response?.data || error; // Re-throw for component handling
+        }
+    },
+
+    /**
+     * Fetches paginated reviews for a specific agent.
+     * @param {string} agentId - The UUID of the agent.
+     * @param {object} params - Query parameters (e.g., { page: 1, per_page: 10 }).
+     * @returns {Promise<object>} - Paginated review data (PaginatedReviewResponse schema).
+     */
+    getAgentReviews: async (agentId, params) => {
+        try {
+            const response = await apiClient.get(`/users/${agentId}/reviews`, { params });
+            return response.data; // Should be PaginatedReviewResponse
+        } catch (error) {
+            console.error(`Error fetching reviews for agent ${agentId}:`, error.response?.data || error.message);
+            throw error.response?.data || error; // Re-throw for component handling
+        }
+    },
+
     /**
      * Fetches the list of properties favorited by the current user.
      * @returns {Promise<Array<object>>} - An array of PropertyResponse objects.

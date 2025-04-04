@@ -163,11 +163,20 @@
     * *Summary (2025-04-03):* Added profile fields to User model/schemas. Implemented UserService method. Created backend routes (/users/me, /users/{id}/profile). Added frontend API calls, UserProfilePage, EditProfilePage, and routing/navigation.
   * [ ] Notifications (In-app/Email)
   * [X] Image Uploads
-    * *Summary (2025-04-03):* Implemented backend storage abstraction (Local/Azure), PropertyImage model, service methods, and routes. Implemented frontend API calls and UI for upload/delete/display in EditListingPage and ListingDetailPage.
+    * *Summary (2025-04-04):* Implemented backend storage abstraction (Local/Azure), PropertyImage model, service methods, and routes. Implemented frontend API calls and UI for upload/delete/display in EditListingPage and ListingDetailPage. Fixed Azure upload issue by manually reading stream and setting content_length.
   * [ ] Map Integration (Google Maps)
   * [ ] Saved Listings/Favorites
-  * [ ] Reviews/Ratings (for Agents/Properties)
+  * [X] Reviews/Ratings (for Agents/Properties)
+    * *Summary (2025-04-04):* Added Review model, service, and routes to backend. Added ReviewForm component and integrated review display/submission into UserProfilePage on frontend.
 - [X] **Vite Migration (`frontend/`):** Migrated frontend build system from Create React App to Vite.
   * *Summary (2025-04-03):* Uninstalled `react-scripts`, installed `vite` & `@vitejs/plugin-react`. Updated `package.json` scripts & type. Moved & updated `index.html`. Renamed entry point to `main.jsx`. Created `vite.config.js` with proxy. Updated `apiService.jsx` base URL. Renamed all `.js` component files containing JSX to `.jsx` and updated imports. Removed `reportWebVitals`.
+  * *Note (2025-04-04):* The `vite.config.js` proxy must include entries for all API path prefixes (e.g., `/auth`, `/properties`, `/admin`, `/users`, `/chat`) to ensure the dev server forwards requests correctly to the backend. Update this list if new top-level API routes are added.
+
+## Phase 7: Bug Fixes & Minor Enhancements (2025-04-04)
+
+- [X] **Fix Frontend Navigation & Address TODOs:**
+  * *Summary (2025-04-04):* Fixed forward/backward navigation by adding `appType: 'spa'` to `vite.config.js`. Implemented pagination on Home, Admin Dashboard, and User Dashboard pages. Added scroll-to-bottom in ChatWindow. Added conditional Edit/Delete buttons on Listing Detail page. Added image display to Home page listing cards. Updated various TODO comments to reflect future enhancement status. Fixed Favorites page crash by adding `Array.isArray` check and robust optional chaining. Added missing proxy rules for `/users` and `/chat` to `vite.config.js`.
+- [X] **Backend Refactoring & Fixes:**
+  * *Summary (2025-04-04):* Centralized logic for fetching authenticated user DB object into `api/utils/auth_helpers.py` and refactored `chat`, `property`, `user`, `favorite`, and `auth` routes to use it, fixing incorrect usage in `favorite_routes`. Fixed local file upload corruption by using `FileStorage.save()` in `LocalStorage`. Fixed Azure file upload corruption by manually reading stream and setting `content_length` in `AzureBlobStorage.save`.
 
 ---

@@ -96,6 +96,17 @@ class ChatNotFoundException(ServiceException):
         super().__init__(message, status_code)
 
 
+class ReviewExistsException(ServiceException):
+    """Raised when a user tries to review the same agent twice."""
+
+    def __init__(
+        self,
+        message: str = "Review already submitted for this agent",
+        status_code: int = 409,
+    ):  # 409 Conflict
+        super().__init__(message, status_code)
+
+
 class FavoriteAlreadyExistsException(ServiceException):
     """Raised when trying to add a favorite that already exists."""
 

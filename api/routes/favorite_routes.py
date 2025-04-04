@@ -38,12 +38,12 @@ async def add_favorite(property_id: UUID):
             # No body needed for successful creation, return 204 No Content
             return "", 204
         except PropertyNotFoundException as e:
-            return ErrorResponse(message=e.message), e.status_code
+            return ErrorResponse(detail=e.message), e.status_code
         except FavoriteAlreadyExistsException as e:
-            return ErrorResponse(message=e.message), e.status_code
+            return ErrorResponse(detail=e.message), e.status_code
         except ServiceException as e:
             # Catch other potential service errors
-            return ErrorResponse(message=e.message), e.status_code
+            return ErrorResponse(detail=e.message), e.status_code
 
 
 @bp.route("/properties/<uuid:property_id>/favorite", methods=["DELETE"])
@@ -64,9 +64,9 @@ async def remove_favorite(property_id: UUID):
             return "", 204
         except (PropertyNotFoundException, FavoriteNotFoundException) as e:
             # Treat both as 404 for this endpoint
-            return ErrorResponse(message=e.message), e.status_code
+            return ErrorResponse(detail=e.message), e.status_code
         except ServiceException as e:
-            return ErrorResponse(message=e.message), e.status_code
+            return ErrorResponse(detail=e.message), e.status_code
 
 
 @bp.route("/users/me/favorites", methods=["GET"])
@@ -87,4 +87,4 @@ async def get_my_favorites():
             response_data = [PropertyResponse.model_validate(p) for p in properties]
             return response_data, 200
         except ServiceException as e:
-            return ErrorResponse(message=e.message), e.status_code
+            return ErrorResponse(detail=e.message), e.status_code

@@ -1,4 +1,11 @@
-from typing import Any, Dict, Optional
+from typing import (  # Import Generic, List, TypeVar
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    TypeVar,
+)
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import MetaData
@@ -71,7 +78,19 @@ class ErrorResponse(BaseModel):
 
 
 # Example Base Response (Optional - can be useful for consistency)
-# class BaseResponse(BaseModel):
-#     model_config = ConfigDict(from_attributes=True) # Allow creating from ORM models
-#     success: bool = True
-#     message: Optional[str] = None
+class BaseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)  # Allow creating from ORM models
+    success: bool = True
+    message: Optional[str] = None
+
+
+# Generic Pydantic model for paginated responses
+ItemType = TypeVar("ItemType")
+
+
+class PaginatedResponse(BaseModel, Generic[ItemType]):
+    items: List[ItemType]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int

@@ -22,6 +22,7 @@ from routes import (
     chat_routes,  # Import chat routes
     favorite_routes,  # Import favorite routes
     property_routes,
+    review_routes,  # Import review routes
     user_routes,  # Import user routes
 )
 from services.database import init_db
@@ -177,6 +178,7 @@ app.register_blueprint(
     user_routes.bp
 )  # Register user routes (prefix defined in user_routes.py)
 app.register_blueprint(favorite_routes.bp)  # Register favorite routes
+app.register_blueprint(review_routes.bp)  # Register review routes
 
 
 @app.route("/health")

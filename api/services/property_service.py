@@ -15,7 +15,7 @@ from quart import current_app  # Import current_app to access storage_manager
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from werkzeug.datastructures import FileStorage  # For type hinting uploaded file
+from quart.datastructures import FileStorage  # For type hinting uploaded file
 
 from services.exceptions import (
     FileNotAllowedException,  # Import FileNotAllowedException

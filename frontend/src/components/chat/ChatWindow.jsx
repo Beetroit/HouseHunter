@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react'; // Import useRef
 import { useAuth } from '../../contexts/AuthContext.jsx'; // Import useAuth
 import useChatWebSocket from '../../hooks/useChatWebSocket.js'; // Import the hook
 import apiService from '../../services/apiService.jsx'; // Import apiService
 import './ChatStyles.css';
 
-// Placeholder component until MessageList is created
-const MessageList = ({ messages }) => (
-    <ul className="message-list">
+// MessageList component modified to accept a ref
+const MessageList = React.forwardRef(({ messages }, ref) => ( // Use React.forwardRef
+    <ul className="message-list" ref={ref}> {/* Attach the ref here */}
         {messages.map((msg, index) => (
             // Use message ID if available and unique, otherwise fallback to index
             <li key={msg.id || index} className={msg.isOwn ? 'own-message' : 'other-message'}>
@@ -16,7 +16,7 @@ const MessageList = ({ messages }) => (
             </li>
         ))}
     </ul>
-);
+));
 
 // Placeholder component until MessageInput is created
 const MessageInput = ({ onSendMessage, disabled }) => { // Add disabled prop
@@ -51,9 +51,15 @@ function ChatWindow({ chatId }) { // Expect only chatId as prop
     const [messages, setMessages] = useState([]);
     const [error, setError] = useState(null); // Local UI/error state
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const messagesEndRef = useRef(null); // Ref for the message list container
 
     // Integrate with useChatWebSocket hook
     const { sendMessage, lastMessage, connectionStatus, error: wsError } = useChatWebSocket(chatId);
+
+    // Function to scroll the message list to the bottom
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollTo({ top: messagesEndRef.current.scrollHeight, behavior: 'smooth' });
+    };
 
     // Update local messages state when a new message arrives via WebSocket
     useEffect(() => {
@@ -79,7 +85,9 @@ function ChatWindow({ chatId }) { // Expect only chatId as prop
                     }
                 ];
             });
-            // TODO: Implement scroll to bottom of message list
+            // Scroll to bottom after adding new message
+            // Use setTimeout to allow DOM update before scrolling
+            setTimeout(scrollToBottom, 0);
         }
     }, [lastMessage, currentUser]); // Depend on lastMessage and currentUser
 
@@ -99,7 +107,7 @@ function ChatWindow({ chatId }) { // Expect only chatId as prop
             setIsLoadingHistory(true);
             setError(null); // Clear previous errors
             try {
-                // TODO: Implement pagination for history loading later if needed
+                // Future enhancement: Implement pagination for history loading if needed (e.g., load more button)
                 const historyData = await apiService.getChatMessages(chatId, 1, 50); // Fetch first 50 messages
                 const formattedHistory = historyData.items.map(msg => {
                     const isOwn = msg.sender && currentUser && msg.sender.id === currentUser.id;
@@ -114,7 +122,9 @@ function ChatWindow({ chatId }) { // Expect only chatId as prop
                     };
                 }).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // Ensure history is sorted chronologically
                 setMessages(formattedHistory);
-                // TODO: Scroll to bottom after loading history
+                // Scroll to bottom after loading history
+                // Use setTimeout to allow DOM update before scrolling
+                setTimeout(scrollToBottom, 0);
             } catch (err) {
                 console.error(`Failed to load chat history for ${chatId}:`, err);
                 setError(`Failed to load message history: ${err.message}`);
@@ -154,7 +164,7 @@ function ChatWindow({ chatId }) { // Expect only chatId as prop
             {isLoadingHistory && <p style={{ textAlign: 'center', padding: '1rem' }}>Loading history...</p>}
             {/* Error display is now part of statusText, but keep separate UI error if needed */}
             {/* {error && !wsError && <div className="error-message">UI Error: {error}</div>} */}
-            <MessageList messages={messages} />
+            <MessageList messages={messages} ref={messagesEndRef} /> {/* Pass the ref */}
             <MessageInput onSendMessage={handleSendMessage} disabled={!isConnected || isLoadingHistory} /> {/* Disable input if not connected or loading */}
         </div>
     );

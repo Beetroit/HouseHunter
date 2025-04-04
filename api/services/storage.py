@@ -3,11 +3,12 @@ import os
 import uuid
 from typing import Optional, Tuple, Type
 
-import aiofiles
+import rich
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.storage.blob import PublicAccess
 from azure.storage.blob.aio import BlobClient, BlobServiceClient, ContainerClient
 from quart import current_app
+from quart.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 # Define allowed extensions (consider moving to config)
@@ -139,7 +140,9 @@ class LocalStorage(StorageInterface):
         current_app.logger.debug("Exiting LocalStorage context.")
         return None  # Propagate exceptions if any
 
-    async def save(self, file_storage, original_filename: str) -> Tuple[str, str]:
+    async def save(
+        self, file_storage: FileStorage, original_filename: str
+    ) -> Tuple[str, str]:
         if not allowed_file(original_filename):
             raise FileNotAllowedException(f"File type not allowed: {original_filename}")
 
@@ -149,15 +152,8 @@ class LocalStorage(StorageInterface):
         save_path = os.path.join(self.upload_folder, filename)
 
         try:
-            # Use aiofiles for async file writing
-            async with aiofiles.open(save_path, "wb") as afp:
-                # Read chunks to avoid loading large files into memory
-                while True:
-                    chunk = await file_storage.read(8192)  # Read in 8KB chunks
-                    if not chunk:
-                        break
-                    await afp.write(chunk)
-
+            # Use the built-in async save method of quart.datastructures.FileStorage
+            await file_storage.save(save_path)
             public_url = self.get_url(filename)
             current_app.logger.info(
                 f"Saved file locally: {filename} (URL: {public_url})"
@@ -329,7 +325,9 @@ class AzureBlobStorage(StorageInterface):
             )
         return self.container_client.get_blob_client(blob_name)
 
-    async def save(self, file_storage, original_filename: str) -> Tuple[str, str]:
+    async def save(
+        self, file_storage: FileStorage, original_filename: str
+    ) -> Tuple[str, str]:
         if not self.container_client:  # Check if context is active
             raise BlobInitializationError(
                 "Cannot save file, Azure storage context not active."
@@ -343,9 +341,11 @@ class AzureBlobStorage(StorageInterface):
         try:
             blob_client = self._get_blob_client(filename)
             async with blob_client:
-                content_length = getattr(file_storage, "content_length", None)
+                file_data = file_storage.stream.read(-1)
+                content_length = len(file_data)
+                rich.print(len(file_data), content_length)
                 await blob_client.upload_blob(
-                    file_storage, overwrite=True, length=content_length
+                    file_data, overwrite=True, length=content_length
                 )
 
             public_url = self.get_url(filename)

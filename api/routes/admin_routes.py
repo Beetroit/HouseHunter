@@ -83,7 +83,8 @@ async def verify_property(property_id: uuid.UUID) -> PropertyResponse:
 @validate_response(PropertyResponse, status_code=200)
 async def reject_property(property_id: uuid.UUID) -> PropertyResponse:
     """Reject a property listing."""
-    # TODO: Optionally add a reason for rejection in request body/response
+    # Future Enhancement: Optionally add a 'reason' field to the request body (requires Pydantic model update)
+    # and update PropertyService/Property model to store/handle the reason.
     async with get_session() as db_session:
         property_service = PropertyService(db_session)
         try:

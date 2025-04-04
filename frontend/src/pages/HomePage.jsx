@@ -7,17 +7,19 @@ function HomePage() {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    // TODO: Add state for pagination (page, totalPages)
+    const [page, setPage] = useState(1); // Current page state
+    const [totalPages, setTotalPages] = useState(1); // Total pages state
 
     useEffect(() => {
         const fetchListings = async () => {
             setLoading(true);
             setError('');
             try {
-                // Fetch first page of properties
-                const response = await apiService.getProperties({ page: 1, per_page: 10 });
+                // Fetch properties for the current page
+                const response = await apiService.getProperties({ page: page, per_page: 10 }); // Use page state
                 setListings(response.items || []);
-                // TODO: Set pagination state (response.total_pages, response.page)
+                setPage(response.page); // Update page state from response (in case API adjusts it)
+                setTotalPages(response.total_pages); // Set total pages from response
             } catch (err) {
                 console.error("Failed to fetch listings:", err);
                 setError(err.message || 'Failed to load property listings.');
@@ -27,7 +29,7 @@ function HomePage() {
         };
 
         fetchListings();
-    }, []); // Empty dependency array means this runs once on mount
+    }, [page]); // Dependency array includes page, so it re-runs when page changes
 
     return (
         <div>
@@ -40,7 +42,14 @@ function HomePage() {
                     {listings.map(listing => (
                         <div key={listing.id} className="listing-card">
                             {/* Basic listing card structure */}
-                            {/* TODO: Add image display later */}
+                            {/* Display first image if available */}
+                            <div className="listing-card-image-container">
+                                {listing.images && listing.images.length > 0 ? (
+                                    <img src={listing.images[0].image_url} alt={listing.title} className="listing-card-image" />
+                                ) : (
+                                    <div className="listing-card-no-image">No Image</div>
+                                )}
+                            </div>
                             <h3>{listing.title}</h3>
                             <p><strong>Type:</strong> {listing.property_type}</p>
                             <p><strong>Location:</strong> {listing.city ? `${listing.city}, ${listing.state || ''}` : 'N/A'}</p>
@@ -50,7 +59,26 @@ function HomePage() {
                     ))}
                 </div>
             )}
-            {/* TODO: Add pagination controls */}
+            {/* Pagination Controls */}
+            {!loading && totalPages > 1 && (
+                <div className="pagination-controls" style={{ marginTop: '2rem', textAlign: 'center' }}>
+                    <button
+                        onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+                        disabled={page <= 1 || loading}
+                        style={{ marginRight: '1rem' }}
+                    >
+                        Previous
+                    </button>
+                    <span>Page {page} of {totalPages}</span>
+                    <button
+                        onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={page >= totalPages || loading}
+                        style={{ marginLeft: '1rem' }}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

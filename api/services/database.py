@@ -14,7 +14,8 @@ from sqlalchemy.ext.asyncio import (
 try:
     engine = create_async_engine(
         config.SQLALCHEMY_DATABASE_URI,
-        echo=config.SQLALCHEMY_ECHO,
+        echo=False,
+        # echo=config.SQLALCHEMY_ECHO,
         pool_pre_ping=True,  # Helps prevent connection errors after long idle times
     )
 except Exception as e:

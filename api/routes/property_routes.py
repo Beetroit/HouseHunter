@@ -20,37 +20,17 @@ from services.exceptions import (
     PropertyNotFoundException,
     StorageException,  # Import StorageException
     UnauthorizedException,
-    UserNotFoundException,
 )
 from services.property_service import PropertyService
-from services.user_service import UserService  # Needed to load full user object
+
+# Removed UserService import as it's now used within the helper
+from utils.auth_helpers import get_current_user_object  # Import shared helper
 
 # Define the Blueprint
 bp = Blueprint("property", __name__, url_prefix="/properties")
 
 
-# --- Helper Function to Get Full User Object ---
-async def get_current_user_object() -> User:
-    """Helper to retrieve the full User object for the logged-in user."""
-    user_id_str = current_user.auth_id
-    if not user_id_str:
-        raise UnauthorizedException("Authentication required.")
-    try:
-        user_id = uuid.UUID(user_id_str)
-    except ValueError:
-        raise UnauthorizedException("Invalid user identifier in session.")
-
-    async with get_session() as db_session:
-        user_service = UserService(db_session)
-        user = await user_service.get_user_by_id(user_id)
-        if not user:
-            # This indicates an issue, maybe user deleted after login
-            raise UserNotFoundException(
-                "Authenticated user not found.", 401
-            )  # Use 401 as it's an auth issue
-        return user
-
-
+# Removed local helper function definition, using shared one from api.utils.auth_helpers
 # --- Query Parameter Schema ---
 class ListPropertiesQueryArgs(BaseModel):
     page: int = Field(default=1, ge=1)
@@ -77,6 +57,7 @@ async def create_property(data: CreatePropertyRequest) -> PropertyResponse:
                 property_data=data, requesting_user=requesting_user
             )
             await db_session.commit()
+            await db_session.refresh(new_property)
             current_app.logger.info(
                 f"Property created: {new_property.id} by user {requesting_user.id}"
             )
@@ -152,7 +133,7 @@ async def get_property(property_id: uuid.UUID) -> PropertyResponse:
     requesting_user: Optional[User] = None
     try:
         # Try to get user object if authenticated, but don't require it
-        if current_user.is_authenticated:
+        if await current_user.is_authenticated:
             requesting_user = await get_current_user_object()
     except UnauthorizedException:
         pass  # Ignore if not authenticated or session invalid
@@ -249,8 +230,10 @@ async def upload_property_image(property_id: uuid.UUID):
     if not image_file:
         raise InvalidRequestException("No image file found in the request.")
 
-    # TODO: Consider adding is_primary flag handling, maybe via query param or form data?
-    # is_primary = request.args.get('primary', 'false').lower() == 'true'
+    # Future Enhancement: Handle 'is_primary' flag.
+    # Should be sent via form data along with the image file.
+    # Example: form = await request.form; is_primary = form.get('is_primary', 'false').lower() == 'true'
+    # Pass 'is_primary' to property_service.add_image_to_property and implement logic there.
     is_primary = False  # Default to false for now
 
     async with get_session() as db_session:

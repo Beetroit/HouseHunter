@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react()],
+    appType: 'spa', // Explicitly set for SPA routing fallback
     server: {
         port: 3000, // Keep the same port as CRA default
         open: true, // Automatically open browser
@@ -23,7 +24,15 @@ export default defineConfig({
                 target: 'http://localhost:5000',
                 changeOrigin: true,
             },
-            // Add other API prefixes if needed (e.g., '/ws' for websockets later)
+            '/users': { // Added for user profile, favorites, etc.
+                target: 'http://localhost:5000',
+                changeOrigin: true,
+            },
+            '/chat': { // Added for chat initiation, messages
+                target: 'http://localhost:5000',
+                changeOrigin: true,
+            },
+            // Add other API prefixes if needed
         }
     }
 });

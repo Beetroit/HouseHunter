@@ -2,10 +2,11 @@ import logging
 import os
 
 import redis.asyncio as redis
+import rich
 from config import get_config
 from models.base import ErrorDetail, ErrorResponse
 from quart import Quart, jsonify
-from quart_auth import QuartAuth
+from quart_auth import QuartAuth, Unauthorized
 from quart_cors import cors
 from quart_schema import (
     QuartSchema,
@@ -30,13 +31,13 @@ from services.storage import get_storage_manager  # Import storage manager facto
 config_name = os.getenv("QUART_CONFIG", "default")
 config = get_config()
 
-app = Quart(__name__)
+app = Quart("HouseHunter")
 app.config.from_object(config)
-
+rich.print(app.config)
 # --- Logging ---
 # Basic logging setup (customize as needed)
 logging.basicConfig(
-    level=logging.INFO if config.QUART_ENV != "development" else logging.DEBUG
+    level=logging.INFO if config.QUART_ENV != "development" else logging.INFO
 )
 app.logger.info(f"Starting app in {config.QUART_ENV} mode")
 
@@ -115,6 +116,13 @@ async def shutdown_services():
 async def not_found(error):
     response = ErrorResponse(detail="The requested URL was not found on the server.")
     return jsonify(response.model_dump()), 404
+
+
+@app.errorhandler(Unauthorized)
+async def unauthorized_error(error: Unauthorized):
+    return ErrorResponse(
+        detail=str(error),
+    ), int(error.code)
 
 
 @app.errorhandler(RequestSchemaValidationError)

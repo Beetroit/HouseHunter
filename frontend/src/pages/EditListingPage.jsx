@@ -194,7 +194,7 @@ function EditListingPage() {
                             >
                                 X
                             </button>
-                            {/* TODO: Add button to set as primary */}
+                            {/* Future Enhancement: Add button here to set image as primary (requires backend API update) */}
                         </div>
                     )) : <p>No images uploaded yet.</p>}
                 </div>

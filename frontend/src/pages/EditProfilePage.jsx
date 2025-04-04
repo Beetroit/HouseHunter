@@ -75,7 +75,8 @@ function EditProfilePage() {
 
         // Only include password if a new one is provided
         if (formData.new_password) {
-            // TODO: Add current_password validation if required by backend/policy
+            // Note: If backend requires current password for verification when changing password,
+            // add a 'current_password' field to the form and include it in the payload here.
             updatePayload.password = formData.new_password;
         }
 

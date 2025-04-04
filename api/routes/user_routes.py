@@ -1,8 +1,8 @@
 import uuid
 
-from models.user import PublicUserResponse, UpdateUserRequest, User, UserResponse
+from models.user import PublicUserResponse, UpdateUserRequest, UserResponse
 from quart import Blueprint, current_app
-from quart_auth import current_user, login_required
+from quart_auth import login_required
 from quart_schema import tag, validate_request, validate_response
 from services.database import get_session
 from services.exceptions import (
@@ -10,32 +10,15 @@ from services.exceptions import (
     UnauthorizedException,
     UserNotFoundException,
 )
-from services.user_service import UserService
+from services.user_service import UserService  # Re-add UserService import
+
+from utils.auth_helpers import get_current_user_object  # Import shared helper
 
 # Define the Blueprint
 bp = Blueprint("user", __name__, url_prefix="/users")
 
 
-# Helper to get full user object (similar to chat_routes, consider centralizing)
-@tag(["User"])
-async def get_current_user_object() -> User:
-    """Helper to retrieve the full User object for the logged-in user."""
-    user_id_str = current_user.auth_id
-    if not user_id_str:
-        raise UnauthorizedException("Authentication required.")
-    try:
-        user_id = uuid.UUID(user_id_str)
-    except ValueError:
-        raise UnauthorizedException("Invalid user identifier in session.")
-
-    async with get_session() as db_session:
-        user_service = UserService(db_session)
-        user = await user_service.get_user_by_id(user_id)
-        if not user:
-            raise UserNotFoundException("Authenticated user not found.", 401)
-        return user
-
-
+# Removed local helper function definition, using shared one from api.utils.auth_helpers
 # --- Routes ---
 
 

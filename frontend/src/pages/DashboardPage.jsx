@@ -9,16 +9,18 @@ function DashboardPage() {
     const [myListings, setMyListings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    // TODO: Add state for pagination
+    const [page, setPage] = useState(1); // Current page state
+    const [totalPages, setTotalPages] = useState(1); // Total pages state
 
-    const fetchMyListings = useCallback(async () => {
+    const fetchMyListings = useCallback(async (currentPage) => { // Accept page number as argument
         setLoading(true);
         setError('');
         try {
-            // Fetch first page of user's properties
-            const response = await apiService.getMyProperties({ page: 1, per_page: 10 });
+            // Fetch user's properties for the current page
+            const response = await apiService.getMyProperties({ page: currentPage, per_page: 10 }); // Use currentPage
             setMyListings(response.items || []);
-            // TODO: Set pagination state
+            setPage(response.page); // Update page state from response
+            setTotalPages(response.total_pages); // Set total pages from response
         } catch (err) {
             console.error("Failed to fetch user listings:", err);
             setError(err.message || 'Failed to load your listings.');
@@ -29,14 +31,14 @@ function DashboardPage() {
 
     useEffect(() => {
         if (currentUser) {
-            fetchMyListings();
+            fetchMyListings(page); // Call fetch function with the current page state
         } else {
             // Should be redirected by ProtectedRoute, but handle defensively
             setLoading(false);
             setError("You must be logged in to view the dashboard.");
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUser]); // Refetch if user changes (e.g., logout/login)
+    }, [currentUser, fetchMyListings, page]); // Add page and fetchMyListings to dependency array
 
     const handleDelete = async (listingId) => {
         if (!window.confirm('Are you sure you want to delete this listing? This cannot be undone.')) {
@@ -80,12 +82,31 @@ function DashboardPage() {
                             {/* Add Edit and Delete buttons */}
                             <Link to={`/edit-listing/${listing.id}`} style={{ marginLeft: '0.5rem', backgroundColor: '#ffc107', color: '#333' }}>Edit</Link>
                             <button onClick={() => handleDelete(listing.id)} style={{ marginLeft: '0.5rem', backgroundColor: '#dc3545' }}>Delete</button>
-                            {/* TODO: Add Promote button */}
+                            {/* Future Enhancement: Add Promote button (requires payment integration) */}
                         </div>
                     ))}
                 </div>
             )}
-            {/* TODO: Add pagination controls */}
+            {/* Pagination Controls */}
+            {!loading && totalPages > 1 && (
+                <div className="pagination-controls" style={{ marginTop: '2rem', textAlign: 'center' }}>
+                    <button
+                        onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+                        disabled={page <= 1 || loading}
+                        style={{ marginRight: '1rem' }}
+                    >
+                        Previous
+                    </button>
+                    <span>Page {page} of {totalPages}</span>
+                    <button
+                        onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={page >= totalPages || loading}
+                        style={{ marginLeft: '1rem' }}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

@@ -83,7 +83,7 @@ function UserProfilePage() {
                 {!profile.bio && !profile.location && <p>No additional profile information provided.</p>}
             </div>
 
-            {/* TODO: Add link to view user's listings? */}
+            {/* Future Enhancement: Add link here to view listings by this user (requires API endpoint and potentially a new page/route) */}
 
             <Link to="/" style={{ display: 'inline-block', marginTop: '1rem' }}>Back to Home</Link>
         </div>

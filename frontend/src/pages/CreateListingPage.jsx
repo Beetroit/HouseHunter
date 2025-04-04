@@ -145,7 +145,7 @@ function CreateListingPage() {
                 <div className="form-group">
                     <label htmlFor="owner_id">Owner User ID:</label>
                     <input type="text" id="owner_id" name="owner_id" value={formData.owner_id} onChange={handleChange} required placeholder="Enter the registered User ID of the property owner" disabled={loading} /> {/* Fixed disabled state */}
-                    {/* TODO: Improve this - maybe a user search/select component */}
+                    {/* Improvement idea: Implement user search/select component here later */}
                 </div>
 
                 {/* Add fields for latitude, longitude, images later */}

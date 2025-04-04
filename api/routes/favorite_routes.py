@@ -1,9 +1,10 @@
 from typing import List
+from uuid import UUID
 
 from models.base import ErrorResponse
 from models.property import PropertyResponse
 from quart import Blueprint
-from quart_auth import current_user, login_required
+from quart_auth import login_required
 from quart_schema import tag, validate_response
 from services.database import get_session
 from services.exceptions import (
@@ -14,26 +15,26 @@ from services.exceptions import (
 )
 from services.favorite_service import FavoriteService
 
-bp = Blueprint("favorite_routes", __name__, url_prefix="/api")
+from utils.auth_helpers import get_current_user_object
+
+bp = Blueprint("favorite_routes", __name__)
 
 
-@bp.route("/properties/<int:property_id>/favorite", methods=["POST"])
+@bp.route("/properties/<uuid:property_id>/favorite", methods=["POST"])
 @login_required
-@validate_response(ErrorResponse, status_code=404)  # For PropertyNotFound
-@validate_response(ErrorResponse, status_code=409)  # For FavoriteAlreadyExists
-@validate_response(ErrorResponse, status_code=500)  # For general ServiceException
+@validate_response(ErrorResponse, status_code=404)
+@validate_response(ErrorResponse, status_code=409)
+@validate_response(ErrorResponse, status_code=500)
 @tag(["Favorite"])
-async def add_favorite(property_id: int):
+async def add_favorite(property_id: UUID):
     """Adds a property to the current user's favorites."""
-    user = await current_user.get_user()
-    if not user:
-        # Should be caught by @login_required, but defensive check
-        return ErrorResponse(message="Authentication required"), 401
+    # Use the helper function to get the full user object
+    requesting_user = await get_current_user_object()
 
     async with get_session() as db_session:
         favorite_service = FavoriteService(db_session)
         try:
-            await favorite_service.add_favorite(user.id, property_id)
+            await favorite_service.add_favorite(requesting_user.id, property_id)
             # No body needed for successful creation, return 204 No Content
             return "", 204
         except PropertyNotFoundException as e:
@@ -45,23 +46,20 @@ async def add_favorite(property_id: int):
             return ErrorResponse(message=e.message), e.status_code
 
 
-@bp.route("/properties/<int:property_id>/favorite", methods=["DELETE"])
+@bp.route("/properties/<uuid:property_id>/favorite", methods=["DELETE"])
 @login_required
-@validate_response(
-    ErrorResponse, status_code=404
-)  # For PropertyNotFound or FavoriteNotFound
-@validate_response(ErrorResponse, status_code=500)  # For general ServiceException
+@validate_response(ErrorResponse, status_code=404)
+@validate_response(ErrorResponse, status_code=500)
 @tag(["Favorite"])
-async def remove_favorite(property_id: int):
+async def remove_favorite(property_id: UUID):
     """Removes a property from the current user's favorites."""
-    user = await current_user.get_user()
-    if not user:
-        return ErrorResponse(message="Authentication required"), 401
+    # Use the helper function to get the full user object
+    requesting_user = await get_current_user_object()
 
     async with get_session() as db_session:
         favorite_service = FavoriteService(db_session)
         try:
-            await favorite_service.remove_favorite(user.id, property_id)
+            await favorite_service.remove_favorite(requesting_user.id, property_id)
             # Successful deletion, return 204 No Content
             return "", 204
         except (PropertyNotFoundException, FavoriteNotFoundException) as e:
@@ -78,14 +76,13 @@ async def remove_favorite(property_id: int):
 @tag(["Favorite"])
 async def get_my_favorites():
     """Gets the list of properties favorited by the current user."""
-    user = await current_user.get_user()
-    if not user:
-        return ErrorResponse(message="Authentication required"), 401
+    # Use the helper function to get the full user object
+    requesting_user = await get_current_user_object()
 
     async with get_session() as db_session:
         favorite_service = FavoriteService(db_session)
         try:
-            properties = await favorite_service.get_user_favorites(user.id)
+            properties = await favorite_service.get_user_favorites(requesting_user.id)
             # Convert SQLAlchemy models to Pydantic models for response validation
             response_data = [PropertyResponse.model_validate(p) for p in properties]
             return response_data, 200

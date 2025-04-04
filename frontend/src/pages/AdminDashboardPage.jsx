@@ -9,16 +9,18 @@ function AdminDashboardPage() {
     const [pendingListings, setPendingListings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    // TODO: Add state for pagination
+    const [page, setPage] = useState(1); // Current page state
+    const [totalPages, setTotalPages] = useState(1); // Total pages state
 
-    const fetchPendingListings = useCallback(async () => {
+    const fetchPendingListings = useCallback(async (currentPage) => { // Accept page number as argument
         setLoading(true);
         setError('');
         try {
-            // Fetch first page of pending properties
-            const response = await apiService.getPendingListings({ page: 1, per_page: 10 });
+            // Fetch pending properties for the current page
+            const response = await apiService.getPendingListings({ page: currentPage, per_page: 10 }); // Use currentPage
             setPendingListings(response.items || []);
-            // TODO: Set pagination state
+            setPage(response.page); // Update page state from response
+            setTotalPages(response.total_pages); // Set total pages from response
         } catch (err) {
             console.error("Failed to fetch pending listings:", err);
             setError(err.message || 'Failed to load pending listings.');
@@ -30,12 +32,12 @@ function AdminDashboardPage() {
     useEffect(() => {
         // Double-check if user is admin client-side, although backend enforces it
         if (currentUser?.role === 'admin') {
-            fetchPendingListings();
+            fetchPendingListings(page); // Call fetch function with the current page state
         } else {
             setError("Access denied. Admin privileges required.");
             setLoading(false);
         }
-    }, [currentUser, fetchPendingListings]);
+    }, [currentUser, fetchPendingListings, page]); // Add page to dependency array
 
     const handleVerify = async (listingId) => {
         console.log(`Attempting to verify listing: ${listingId}`);
@@ -86,7 +88,7 @@ function AdminDashboardPage() {
                         <div key={listing.id} className="listing-card">
                             <h3>{listing.title}</h3>
                             <p><strong>Status:</strong> {listing.status}</p>
-                            <p><strong>Submitted by:</strong> {listing.owner?.email || 'N/A'}</p> {/* TODO: Update this to listing.lister?.email */}
+                            <p><strong>Submitted by:</strong> {listing.lister?.email || 'N/A'}</p> {/* Updated as per TODO */}
                             <p><strong>Type:</strong> {listing.property_type}</p>
                             <p><strong>Location:</strong> {listing.city ? `${listing.city}, ${listing.state || ''}` : 'N/A'}</p>
                             <p><strong>Price:</strong> {listing.price_per_month ? `$${listing.price_per_month.toFixed(2)}/month` : 'N/A'}</p>
@@ -100,7 +102,26 @@ function AdminDashboardPage() {
                     ))}
                 </div>
             )}
-            {/* TODO: Add pagination controls */}
+            {/* Pagination Controls */}
+            {!loading && totalPages > 1 && (
+                <div className="pagination-controls" style={{ marginTop: '2rem', textAlign: 'center' }}>
+                    <button
+                        onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+                        disabled={page <= 1 || loading}
+                        style={{ marginRight: '1rem' }}
+                    >
+                        Previous
+                    </button>
+                    <span>Page {page} of {totalPages}</span>
+                    <button
+                        onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={page >= totalPages || loading}
+                        style={{ marginLeft: '1rem' }}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

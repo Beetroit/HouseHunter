@@ -118,7 +118,7 @@ class User(Base):
 
 # Base properties shared by other schemas
 class UserBase(BaseModel):
-    email: EmailStr = Field(..., example="user@example.com")
+    email: EmailStr = Field(..., example="beetroit3266@gmail.com")
     first_name: Optional[str] = Field(None, max_length=100, example="John")
     last_name: Optional[str] = Field(None, max_length=100, example="Doe")
     phone_number: Optional[str] = Field(None, max_length=20, example="+1234567890")
@@ -127,13 +127,13 @@ class UserBase(BaseModel):
 
 # Properties required for user creation
 class CreateUserRequest(UserBase):
-    password: str = Field(..., min_length=8, example="strongpassword")
+    password: str = Field(..., min_length=8, example="W9h_aa6VTqjSG9A")
 
 
 # Properties for user login
 class LoginRequest(BaseModel):
-    email: EmailStr = Field(..., example="user@example.com")
-    password: str = Field(..., example="strongpassword")
+    email: EmailStr = Field(..., example="beetroit3266@gmail.com")
+    password: str = Field(..., example="W9h_aa6VTqjSG9A")
 
 
 # Properties to return to the client (excluding sensitive info)

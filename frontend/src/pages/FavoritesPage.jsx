@@ -44,7 +44,10 @@ function FavoritesPage() {
     return (
         <div className="favorites-container page-container"> {/* Added page-container class */}
             <h2>My Saved Listings</h2>
-            {favorites.length === 0 ? (
+            {/* Check if favorites is an array before trying to map */}
+            {!Array.isArray(favorites) ? (
+                <p className="error-message">Could not display favorites. Unexpected data format received.</p>
+            ) : favorites.length === 0 ? (
                 <p>You haven't saved any listings yet. <Link to="/">Browse listings</Link> to find some!</p>
             ) : (
                 <div className="listings-grid"> {/* Use grid similar to HomePage if desired */}
@@ -52,15 +55,17 @@ function FavoritesPage() {
                         <div key={listing.id} className="listing-card">
                             {/* Basic Listing Card Structure - Adapt as needed */}
                             {/* You might want to extract this into a reusable ListingCard component */}
-                            {listing.images && listing.images.length > 0 ? (
-                                <img src={listing.images[0].image_url} alt={listing.title} className="listing-card-image" />
+                            {/* Safely access image URL */}
+                            {listing.images?.[0]?.image_url ? (
+                                <img src={listing.images[0].image_url} alt={listing.title ?? 'Listing Image'} className="listing-card-image" />
                             ) : (
                                 <div className="listing-card-image placeholder">No Image</div>
                             )}
                             <div className="listing-card-info">
-                                <h3>{listing.title}</h3>
-                                <p>{listing.city}, {listing.state}</p>
-                                <p>{listing.price_per_month ? `$${listing.price_per_month}/mo` : 'Price N/A'}</p>
+                                {/* Safely access title, city, state */}
+                                <h3>{listing.title ?? 'Untitled Listing'}</h3>
+                                <p>{listing.city ?? 'N/A'}, {listing.state ?? 'N/A'}</p>
+                                <p>{listing.price_per_month ? `$${Number(listing.price_per_month).toFixed(2)}/mo` : 'Price N/A'}</p> {/* Added Number() and toFixed(2) for consistency */}
                                 <Link to={`/listings/${listing.id}`} className="button-link">View Details</Link>
                                 {/* Optionally add a remove favorite button here too */}
                             </div>

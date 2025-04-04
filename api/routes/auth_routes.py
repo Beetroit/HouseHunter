@@ -1,4 +1,3 @@
-import uuid
 from models.user import (
     CreateUserRequest,
     LoginRequest,
@@ -13,14 +12,17 @@ from quart_auth import (
     login_user,
     logout_user,
 )
-from quart_schema import validate_request, validate_response, tag
+from quart_schema import tag, validate_request, validate_response
 from services.database import get_session
 from services.exceptions import (
     EmailAlreadyExistsException,
     InvalidCredentialsException,
+    UnauthorizedException,  # Import UnauthorizedException
     UserNotFoundException,
 )
 from services.user_service import UserService
+
+from utils.auth_helpers import get_current_user_object  # Import shared helper
 
 # Define the Blueprint
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -97,25 +99,13 @@ async def logout():
 @validate_response(UserResponse, status_code=200)
 async def get_current_user() -> UserResponse:
     """Get the details of the currently logged-in user."""
-    # Quart-Auth loads the user object into current_user based on session
-    # We need to fetch the full user details from the DB using the ID
-    user_id = current_user.auth_id
-    if not user_id:
-        # Should not happen if @login_required works, but good practice
-        raise InvalidCredentialsException("Not authenticated.", 401)
-
-    async with get_session() as db_session:
-        user_service = UserService(db_session)
-        # Fetch the user details using the ID stored in the session
-        user = await user_service.get_user_by_id(
-            uuid.UUID(user_id)
-        )  # Convert string ID back to UUID
-        if user is None:
-            # This might indicate a session issue or deleted user
-            logout_user()  # Log out inconsistent session
-            raise UserNotFoundException(
-                "Authenticated user not found in database.", 404
-            )
-
+    # Use the shared helper function to get the full user object
+    # This handles ID validation and fetching from DB
+    try:
+        user = await get_current_user_object()
         # Convert the SQLAlchemy User model to Pydantic UserResponse
         return UserResponse.model_validate(user)
+    except (UnauthorizedException, UserNotFoundException) as e:
+        # If helper raises error (e.g., user deleted), log out and re-raise
+        logout_user()
+        raise e

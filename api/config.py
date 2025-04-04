@@ -19,10 +19,9 @@ class Config:
     """Base configuration."""
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "you-should-really-change-this")
-    QUART_APP = os.environ.get("QUART_APP", "app:create_app")
     QUART_ENV = os.environ.get("QUART_ENV", "production")
-    QUART_DEBUG = False
-    TESTING = False
+    QUART_DEBUG = True
+    TESTING = True
 
     # Database - Default to SQLite for safety if no specific config is chosen
     SQLALCHEMY_DATABASE_URI = os.environ.get(
@@ -32,10 +31,20 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # Deprecated and unnecessary
 
     # Quart-Auth settings
-    QUART_AUTH_DURATION = timedelta(days=1).seconds
-    QUART_AUTH_COOKIE_SECURE = QUART_ENV == "production"
-    QUART_AUTH_COOKIE_HTTPONLY = True
-    QUART_AUTH_COOKIE_SAMESITE = "Lax"
+    QUART_AUTH_MODE = "cookie"
+    QUART_AUTH_DURATION = 3600 * 24  # 1 day
+
+    QUART_AUTH_COOKIE_SECURE = False  # QUART_ENV == "production"
+    QUART_AUTH_COOKIE_HTTPONLY = False  # QUART_ENV == "production"
+    # QUART_AUTH_COOKIE_SAMESITE = "None"
+    QUART_AUTH_COOKIE_NAME = "hh_auth"
+    QUART_AUTH_COOKIE_PATH = "/"
+
+    SESSION_COOKIE_SECURE = QUART_ENV == "production"
+    SESSION_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_HTTPONLY = QUART_ENV == "production"
+    SESSION_COOKIE_NAME = "hh_session"
+    SESSION_COOKIE_PATH = "/"
 
     # CORS settings (adjust origin as needed for frontend)
     QUART_CORS_ALLOW_ORIGIN = os.environ.get(
@@ -64,8 +73,8 @@ class Config:
         "AZURE_STORAGE_CONTAINER_NAME", "property-images"
     )
     # Consider adding allowed extensions and max size
-    # ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-    # MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB limit
+    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB limit
 
 
 class DevelopmentConfig(Config):
@@ -77,7 +86,6 @@ class DevelopmentConfig(Config):
         "DEV_DATABASE_URL", "sqlite+aiosqlite:///dev_app.db"
     )
     SQLALCHEMY_ECHO = True  # Useful for debugging in development
-    QUART_AUTH_COOKIE_SECURE = False  # Allow HTTP for local dev
 
 
 class TestingConfig(Config):

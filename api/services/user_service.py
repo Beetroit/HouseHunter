@@ -26,6 +26,8 @@ class UserService:
 
     async def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
         """Fetch a user by their UUID."""
+        if not isinstance(user_id, uuid.UUID):
+            user_id = uuid.UUID(user_id, version=4)
         result = await self.session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 

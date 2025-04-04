@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom'; // Ensure useNavigate is imported
 import { useAuth } from '../contexts/AuthContext.jsx';
 import apiService from '../services/apiService.jsx';
 import './ListingStyles.css'; // Reuse listing styles
@@ -11,12 +11,13 @@ function ListingDetailPage() {
     const [error, setError] = useState('');
     const [chatError, setChatError] = useState(''); // Separate error state for chat initiation
     const [isInitiatingChat, setIsInitiatingChat] = useState(false);
+    const navigate = useNavigate(); // Hook for navigation
     const [isFavorite, setIsFavorite] = useState(false);
     const [favoritesLoading, setFavoritesLoading] = useState(false); // Loading state for initial favorites check
     const [toggleFavoriteLoading, setToggleFavoriteLoading] = useState(false); // Loading state for add/remove action
     const [favoriteError, setFavoriteError] = useState('');
     const { currentUser } = useAuth(); // Get current user
-    const navigate = useNavigate(); // Hook for navigation
+    // Removed duplicate navigate initialization
 
     useEffect(() => {
         const fetchListingDetails = async () => {
@@ -76,6 +77,21 @@ function ListingDetailPage() {
         return <p>Listing not found.</p>;
     }
 
+    // Handler for deleting a listing (Defined within component scope)
+    const handleDelete = async (listingId) => {
+        if (!window.confirm('Are you sure you want to permanently delete this listing? This action cannot be undone.')) {
+            return;
+        }
+        try {
+            await apiService.deleteProperty(listingId);
+            alert('Listing deleted successfully.');
+            navigate('/dashboard'); // Navigate after deletion
+        } catch (err) {
+            console.error(`Failed to delete listing ${listingId}:`, err);
+            setError(err.message || 'Failed to delete listing.');
+        }
+    }
+
     // Format details for display
     const formatPrice = (price) => price ? `$${Number(price).toFixed(2)}/month` : 'N/A';
     const formatSqFt = (sqft) => sqft ? `${sqft} sq ft` : 'N/A';
@@ -97,8 +113,6 @@ function ListingDetailPage() {
                 </button>
             )}
             {favoriteError && <p className="error-message" style={{ color: 'orange' }}>{favoriteError}</p>}
-
-
             {/* Image Display Section */}
             <div className="listing-images" style={{ marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
                 {listing.images && listing.images.length > 0 ? (
@@ -117,7 +131,7 @@ function ListingDetailPage() {
                 )}
             </div>
 
-            {/* TODO: Add image gallery here */}
+            {/* Image display handled above */}
             <p><strong>Type:</strong> {listing.property_type}</p>
             <p><strong>Status:</strong> {listing.status}</p>
             <p><strong>Description:</strong> {listing.description || 'No description provided.'}</p>
@@ -155,8 +169,14 @@ function ListingDetailPage() {
                 </button>
             )}
 
-            {/* TODO: Add "Edit/Delete" buttons if current user is owner/lister/admin */}
-            {/* TODO: Add "Verify/Reject" buttons if current user is admin? (Already on AdminDashboard) */}
+            {/* Edit/Delete Controls for authorized users */}
+            {currentUser && listing && (listing.lister?.id === currentUser.id || listing.owner?.id === currentUser.id || currentUser.role === 'admin') && (
+                <div className="listing-actions" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>
+                    <Link to={`/edit-listing/${listing.id}`} style={{ marginRight: '0.5rem', backgroundColor: '#ffc107', color: '#333', padding: '0.5rem 1rem', textDecoration: 'none', borderRadius: '4px' }}>Edit Listing</Link>
+                    <button onClick={() => handleDelete(listing.id)} style={{ backgroundColor: '#dc3545', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Delete Listing</button>
+                </div>
+            )}
+            {/* Verify/Reject buttons are on AdminDashboard */}
 
             <Link to="/">Back to Listings</Link>
             {/* Removed duplicate link */}

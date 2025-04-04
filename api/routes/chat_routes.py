@@ -28,32 +28,16 @@ from services.exceptions import (  # Import more exceptions
     PropertyNotFoundException,
     UnauthorizedException,
 )
-from services.user_service import UserService  # To fetch user object
+
+# Removed UserService import as it's now used within the helper
+from utils.auth_helpers import get_current_user_object  # Import shared helper
 
 bp = Blueprint("chat", __name__, url_prefix="/chat")
 
 # Removed in-memory active_connections dictionary in favor of Redis Pub/Sub
 
 
-# Helper to get full user object (might need adjustment based on actual location)
-async def get_current_user_object() -> User:
-    """Helper to retrieve the full User object for the logged-in user."""
-    user_id_str = current_user.auth_id
-    if not user_id_str:
-        raise UnauthorizedException("Authentication required.")
-    try:
-        user_id = uuid.UUID(user_id_str)
-    except ValueError:
-        raise UnauthorizedException("Invalid user identifier in session.")
-
-    async with get_session() as db_session:
-        user_service = UserService(db_session)
-        user = await user_service.get_user_by_id(user_id)
-        if not user:
-            raise UnauthorizedException("Authenticated user not found.")
-        return user
-
-
+# Removed local helper function definition, using shared one from api.utils.auth_helpers
 # --- HTTP Route for Initiating Chat ---
 @bp.route("/initiate/<uuid:property_id>", methods=["POST"])
 @login_required
@@ -161,7 +145,7 @@ async def chat_ws(chat_id: uuid.UUID):
 
     try:
         # 1. Authenticate the user
-        if not current_user.is_authenticated:
+        if not await current_user.is_authenticated:
             current_app.logger.warning("Unauthenticated WebSocket connection attempt.")
             return "Authentication required", 401
         requesting_user = await get_current_user_object()

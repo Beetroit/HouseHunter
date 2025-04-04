@@ -1,80 +1,157 @@
+/* frontend/src/pages/FormStyles.css */
+
 /* Shared styles for form containers and elements */
 .form-container {
-    max-width: 400px;
-    margin: 2rem auto;
-    padding: 2rem;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    max-width: 450px;
+    /* Slightly wider */
+    margin: var(--spacing-xl) auto;
+    /* Use variable */
+    padding: var(--spacing-xl);
+    /* Use variable */
+    /* Glassmorphism */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow-lg);
     text-align: left;
+    color: var(--text-color);
+    /* Use variable */
 }
 
 .form-container h2 {
     text-align: center;
-    margin-bottom: 1.5rem;
-    color: #333;
+    margin-bottom: var(--spacing-lg);
+    /* Use variable */
+    color: var(--text-color);
+    /* Use variable */
+    font-weight: 600;
 }
 
 .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-lg);
+    /* Use variable */
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-    color: #555;
+    margin-bottom: var(--spacing-sm);
+    /* Use variable */
+    font-weight: 500;
+    /* Slightly less bold */
+    color: var(--text-color-muted);
+    /* Use variable */
+    font-size: 0.9rem;
 }
 
 .form-group input[type="text"],
 .form-group input[type="email"],
 .form-group input[type="password"],
+.form-group input[type="number"],
+/* Added number type */
 .form-group textarea,
 .form-group select {
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: var(--spacing-md);
+    /* Use variable */
+    border: 1px solid var(--glass-border-color);
+    /* Use variable */
+    border-radius: var(--border-radius-md);
+    /* Use variable */
     box-sizing: border-box;
-    /* Include padding and border in element's total width and height */
     font-size: 1rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    /* Very subtle background */
+    color: var(--text-color);
+    /* Use variable */
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* Style placeholder text */
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: var(--text-color-muted);
+    opacity: 0.7;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    /* Give textarea more default height */
+    resize: vertical;
+    /* Allow vertical resize */
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #007bff;
-    /* Highlight focus */
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-color: var(--primary-color);
+    /* Use variable */
+    box-shadow: 0 0 0 3px var(--accent-glow);
+    /* Use variable for glow */
+    background-color: rgba(255, 255, 255, 0.08);
+    /* Slightly lighter on focus */
+}
+
+/* Style select dropdown */
+.form-group select {
+    appearance: none;
+    /* Remove default arrow */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23a0a0a0' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    /* Custom arrow */
+    background-repeat: no-repeat;
+    background-position: right var(--spacing-md) center;
+    background-size: 1em;
+    padding-right: calc(var(--spacing-md) * 2.5);
+    /* Make space for arrow */
 }
 
 button[type="submit"] {
     display: block;
     width: 100%;
-    padding: 0.75rem;
-    background-color: #007bff;
+    padding: var(--spacing-md);
+    /* Use variable */
+    background-color: var(--primary-color);
+    /* Use variable */
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius-md);
+    /* Use variable */
     font-size: 1rem;
-    font-weight: bold;
+    font-weight: 600;
+    /* Bolder submit */
     cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+    margin-top: var(--spacing-lg);
+    /* Add margin above button */
 }
 
 button[type="submit"]:hover:not(:disabled) {
-    background-color: #0056b3;
+    background-color: var(--primary-color-dark);
+    /* Use variable */
+    transform: translateY(-2px);
+    /* Subtle lift */
 }
 
+button[type="submit"]:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+
 button[type="submit"]:disabled {
-    background-color: #cccccc;
+    background-color: var(--secondary-color);
+    /* Use variable */
+    opacity: 0.6;
     cursor: not-allowed;
 }
 
+/* Using the consistent error message style from App.css */
+/* .error-message class is already defined globally in App.css */
+/* Remove the old definition */
+/*
 .error-message {
     color: #dc3545;
-    /* Red for errors */
     background-color: #f8d7da;
     border: 1px solid #f5c6cb;
     padding: 0.75rem;
@@ -82,3 +159,4 @@ button[type="submit"]:disabled {
     margin-bottom: 1rem;
     text-align: center;
 }
+*/

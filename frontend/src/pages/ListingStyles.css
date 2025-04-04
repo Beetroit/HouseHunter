@@ -1,86 +1,239 @@
+/* frontend/src/pages/ListingStyles.css */
+
 /* Styles for displaying listings */
 .listings-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    /* Responsive grid */
-    gap: 1.5rem;
-    padding: 1rem;
+    gap: var(--spacing-lg);
+    /* Use variable */
+    padding: var(--spacing-md);
+    /* Use variable */
 }
 
 .listing-card {
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: box-shadow 0.2s ease-in-out;
+    /* Glassmorphism */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--border-radius-lg);
+    /* Larger radius */
+    padding: var(--spacing-lg);
+    /* Use variable */
+    box-shadow: var(--box-shadow-md);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     text-align: left;
+    overflow: hidden;
+    /* Ensure content respects border radius */
+    display: flex;
+    /* Use flexbox for better internal layout */
+    flex-direction: column;
 }
 
 .listing-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--box-shadow-lg);
+    transform: translateY(-4px);
+    /* Subtle lift effect */
 }
+
+/* Styles for Listing Card Images */
+.listing-card-image-container {
+    height: 200px;
+    /* Defined height for consistency */
+    background-color: rgba(255, 255, 255, 0.05);
+    /* Placeholder bg for loading/no image */
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    /* Slightly smaller radius for inner elements */
+    display: flex;
+    /* Needed for centering no-image text */
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* Crucial for object-fit: cover */
+    position: relative;
+    /* Optional: for potential overlays */
+}
+
+.listing-card-image {
+    display: block;
+    /* Remove extra space below image */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Scale image to cover container, cropping if needed */
+    transition: transform 0.3s ease-in-out;
+    /* Add subtle zoom on hover */
+}
+
+.listing-card:hover .listing-card-image {
+    transform: scale(1.05);
+    /* Zoom image slightly on card hover */
+}
+
+.listing-card-no-image {
+    color: var(--text-color-muted);
+    font-size: 0.9em;
+}
+
 
 .listing-card h3 {
     margin-top: 0;
-    margin-bottom: 0.75rem;
-    font-size: 1.2rem;
-    color: #333;
+    margin-bottom: var(--spacing-sm);
+    /* Adjusted spacing */
+    font-size: 1.15rem;
+    /* Slightly adjusted size */
+    color: var(--text-color);
+    /* Use variable */
+    font-weight: 600;
 }
 
 .listing-card p {
-    margin-bottom: 0.5rem;
-    color: #555;
-    font-size: 0.95rem;
+    margin-bottom: var(--spacing-xs);
+    /* Tighter spacing for details */
+    color: var(--text-color-muted);
+    /* Use variable */
+    font-size: 0.9rem;
+    /* Slightly smaller */
 }
 
 .listing-card strong {
-    color: #444;
+    color: var(--text-color);
+    /* Use variable */
+    font-weight: 500;
 }
 
 .listing-card a {
     display: inline-block;
-    margin-top: 0.75rem;
-    padding: 0.5rem 1rem;
-    background-color: #007bff;
+    margin-top: auto;
+    /* Push button to bottom of card */
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--primary-color);
     color: white;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius-md);
     font-size: 0.9rem;
-    transition: background-color 0.2s ease-in-out;
+    font-weight: 500;
+    text-align: center;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
 }
 
 .listing-card a:hover {
-    background-color: #0056b3;
+    background-color: var(--primary-color-dark);
+    text-decoration: none;
+    /* Remove underline */
+    transform: scale(1.03);
 }
+
+.listing-card a:active {
+    transform: scale(0.98);
+}
+
 
 /* Styles for Listing Detail Page */
 .listing-detail-container {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 2rem;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+    /* Slightly wider */
+    margin: var(--spacing-xl) auto;
+    /* Use variable */
+    padding: var(--spacing-xl);
+    /* Use variable */
+    /* Glassmorphism */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow-lg);
     text-align: left;
+    color: var(--text-color);
+    /* Use variable */
 }
 
 .listing-detail-container h2 {
     margin-top: 0;
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-lg);
+    /* Use variable */
+    color: var(--text-color);
+    font-weight: 600;
 }
 
 .listing-detail-container p {
-    margin-bottom: 0.75rem;
-    line-height: 1.6;
+    margin-bottom: var(--spacing-sm);
+    /* Use variable */
+    line-height: 1.7;
+    /* Slightly increased line height */
+    color: var(--text-color-muted);
+}
+
+.listing-detail-container strong {
+    color: var(--text-color);
+    font-weight: 500;
 }
 
 .listing-detail-container .owner-info {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
+    margin-top: var(--spacing-lg);
+    /* Use variable */
+    padding-top: var(--spacing-lg);
+    /* Use variable */
+    border-top: 1px solid var(--glass-border-color);
+    /* Use variable */
     font-size: 0.9rem;
-    color: #666;
+    color: var(--text-color-muted);
+    /* Use variable */
 }
 
-/* Add styles for images, maps, chat buttons etc. later */
+/* Styles for Images in Detail Page (Placeholder for now) */
+.listing-detail-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.listing-detail-images img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--border-radius-md);
+    object-fit: cover;
+    border: 1px solid var(--glass-border-color);
+}
+
+
+/* Pagination Controls */
+.pagination-controls {
+    margin-top: var(--spacing-xl);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.pagination-controls button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: var(--primary-color-dark);
+}
+
+.pagination-controls button:disabled {
+    background-color: var(--secondary-color);
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.pagination-controls span {
+    color: var(--text-color-muted);
+    font-size: 0.95rem;
+}
+
+/* Add styles for maps, chat buttons etc. later */

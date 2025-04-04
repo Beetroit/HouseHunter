@@ -1,13 +1,27 @@
 .App {
-    text-align: center;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    /* text-align: center; Removed, let components decide alignment */
 }
 
 nav {
-    background-color: #282c34;
-    padding: 1rem 0;
+    /* Glassmorphism */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    /* Safari */
+    border-bottom: 1px solid var(--glass-border-color);
+    box-shadow: var(--box-shadow-md);
+
+    padding: var(--spacing-sm) var(--spacing-md);
+    /* Adjusted padding */
+    position: sticky;
+    /* Make nav sticky */
+    top: 0;
+    z-index: 100;
+    /* Ensure nav stays on top */
+    width: 100%;
 }
 
 nav ul {
@@ -15,37 +29,101 @@ nav ul {
     padding: 0;
     margin: 0;
     display: flex;
-    justify-content: center;
+    align-items: center;
+    /* Vertically align items */
+    justify-content: flex-start;
+    /* Align items to the start */
+    flex-wrap: wrap;
+    /* Allow items to wrap on smaller screens */
+    gap: var(--spacing-md);
+    /* Add gap between items */
 }
 
 nav ul li {
-    margin: 0 1rem;
+    margin: 0;
+    /* Removed default margin */
+}
+
+/* Style for the user email/profile link - push to the right */
+nav ul li:last-child:has(a[href^="/profile/"]) {
+    margin-left: auto;
 }
 
 nav a {
-    color: white;
+    color: var(--text-color);
     text-decoration: none;
-    font-weight: bold;
+    font-weight: 500;
+    /* Slightly less bold */
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    display: inline-block;
+    /* Ensure padding is applied correctly */
 }
 
 nav a:hover,
 nav a:focus {
-    color: #61dafb;
+    color: var(--text-color);
+    /* Keep text color consistent */
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Subtle background highlight */
+    text-decoration: none;
+    /* Remove underline on hover */
 }
+
+/* Style for the logout button */
+nav button {
+    background-color: transparent;
+    color: var(--text-color-muted);
+    border: 1px solid var(--text-color-muted);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+nav button:hover {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    border-color: var(--secondary-color);
+}
+
 
 main {
     flex-grow: 1;
-    /* Allows main content to fill available space */
-    padding: 2rem;
+    padding: var(--spacing-xl);
+    /* Use variable */
+    max-width: 1200px;
+    /* Optional: constrain content width */
+    margin: 0 auto;
+    /* Center content */
+    width: 100%;
 }
 
 footer {
-    background-color: #f0f0f0;
-    padding: 1rem 0;
+    background: var(--glass-bg);
+    /* Subtle glass effect */
+    backdrop-filter: blur(calc(var(--glass-blur) / 2));
+    /* Less blur than nav */
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) / 2));
+    border-top: 1px solid var(--glass-border-color);
+    padding: var(--spacing-md) 0;
     margin-top: auto;
-    /* Pushes footer to the bottom */
-    border-top: 1px solid #ddd;
-    color: #555;
+    color: var(--text-color-muted);
+    text-align: center;
+    /* Center footer text */
+    font-size: 0.9em;
 }
 
 /* Add more specific component styles later */
+.error-message {
+    color: #ff6b6b;
+    /* A distinct error color */
+    background-color: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-md);
+}

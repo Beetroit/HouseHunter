@@ -1,123 +1,176 @@
+/* frontend/src/components/chat/ChatStyles.css */
+
 .chat-window {
     display: flex;
     flex-direction: column;
-    height: 400px;
-    /* Example height */
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    height: 500px;
+    /* Increased height */
+    /* Glassmorphism */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--border-radius-lg);
     overflow: hidden;
-    background-color: #f9f9f9;
-    margin-bottom: 1rem;
-    /* Add some space below */
+    box-shadow: var(--box-shadow-lg);
+    margin-bottom: var(--spacing-lg);
+    /* Use variable */
+    color: var(--text-color);
+    /* Use variable */
 }
 
 .chat-window h3 {
-    background-color: #eee;
-    padding: 0.5rem 1rem;
+    /* Subtle header style */
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: var(--spacing-sm) var(--spacing-md);
     margin: 0;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--glass-border-color);
     font-size: 1rem;
-}
-
-.connection-status {
-    padding: 0.2rem 1rem;
-    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-color);
     text-align: center;
 }
 
+.connection-status {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.8rem;
+    text-align: center;
+    border-bottom: 1px solid var(--glass-border-color);
+}
+
 .connection-status.connected {
-    background-color: #d4edda;
-    /* Light green */
-    color: #155724;
+    background-color: rgba(15, 138, 157, 0.2);
+    /* Use primary color with alpha */
+    color: #a7f3d0;
+    /* Light teal/green text */
 }
 
 .connection-status.disconnected {
-    background-color: #f8d7da;
-    /* Light red */
-    color: #721c24;
+    background-color: rgba(255, 107, 107, 0.15);
+    /* Use error color with alpha */
+    color: #ff8f8f;
+    /* Lighter red text */
 }
 
 .message-list {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 1rem;
+    padding: var(--spacing-md);
     list-style-type: none;
     margin: 0;
+    display: flex;
+    /* Use flexbox for alignment */
+    flex-direction: column;
+    /* Stack messages vertically */
+}
+
+/* Scrollbar styling (optional, for modern look) */
+.message-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.message-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
 }
 
 .message-list li {
-    margin-bottom: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 10px;
+    margin-bottom: var(--spacing-md);
+    /* Increased spacing */
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+    /* Match container radius */
     max-width: 75%;
     word-wrap: break-word;
+    line-height: 1.4;
+    box-shadow: var(--box-shadow-sm);
 }
 
 .message-list li strong {
     display: block;
-    font-size: 0.8rem;
-    margin-bottom: 0.2rem;
-    color: #555;
+    font-size: 0.75rem;
+    /* Smaller sender name */
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-color-muted);
+    /* Use variable */
+    opacity: 0.8;
 }
 
 .message-list .other-message {
-    background-color: #e9ecef;
+    background-color: var(--secondary-color);
+    /* Use variable */
     align-self: flex-start;
     margin-right: auto;
-    /* Push to left */
+    border-bottom-left-radius: var(--border-radius-sm);
+    /* Slightly different shape */
 }
 
 .message-list .own-message {
-    background-color: #d1e7fd;
-    /* Light blue */
+    background-color: var(--primary-color);
+    /* Use variable */
+    color: white;
+    /* Ensure text is readable */
     align-self: flex-end;
     margin-left: auto;
-    /* Push to right */
-    text-align: right;
+    text-align: left;
+    /* Keep text left-aligned */
+    border-bottom-right-radius: var(--border-radius-sm);
+    /* Slightly different shape */
 }
 
 .message-list .own-message strong {
-    text-align: right;
-    /* Align sender name right */
+    color: rgba(255, 255, 255, 0.7);
+    /* Lighter sender name */
+    /* text-align: right; Removed, keep sender left */
 }
 
 
 .message-input-form {
     display: flex;
-    padding: 0.5rem;
-    border-top: 1px solid #ccc;
-    background-color: #fff;
+    padding: var(--spacing-sm);
+    border-top: 1px solid var(--glass-border-color);
+    background-color: rgba(0, 0, 0, 0.1);
+    /* Slightly darker input area */
 }
 
 .message-input-form input[type="text"] {
     flex-grow: 1;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-right: 0.5rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--border-radius-md);
+    margin-right: var(--spacing-sm);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+.message-input-form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .message-input-form button {
-    padding: 0.5rem 1rem;
+    padding: var(--spacing-sm) var(--spacing-md);
     border: none;
-    background-color: #007bff;
+    background-color: var(--primary-color);
     color: white;
-    border-radius: 4px;
+    border-radius: var(--border-radius-md);
     cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out;
 }
 
 .message-input-form button:hover {
-    background-color: #0056b3;
+    background-color: var(--primary-color-dark);
 }
 
-.error-message {
-    color: #721c24;
-    /* Dark red */
-    background-color: #f8d7da;
-    /* Light red */
-    border: 1px solid #f5c6cb;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    margin: 0.5rem 1rem;
-    font-size: 0.9rem;
-}
+/* Remove redundant error message style, use global one from App.css */
+/*
+.error-message { ... }
+*/

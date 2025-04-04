@@ -1,19 +1,103 @@
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+:root {
+    /* Color Palette */
+    --bg-color-start: #1a1a2e;
+    /* Dark blue/purple */
+    --bg-color-end: #16213e;
+    /* Darker blue */
+    --text-color: #e0e0e0;
+    /* Light grey for text */
+    --text-color-muted: #a0a0a0;
+    /* Muted grey */
+    --primary-color: #0f8a9d;
+    /* Teal accent */
+    --primary-color-dark: #0c6f7e;
+    --secondary-color: #4a4e69;
+    /* Muted purple/grey */
+    --accent-glow: rgba(15, 138, 157, 0.3);
+    /* Glow effect for primary */
+
+    /* Glassmorphism */
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-border-color: rgba(255, 255, 255, 0.15);
+    --glass-blur: 8px;
+
+    /* UI Elements */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --box-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --box-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --box-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+
+    /* Fonts */
+    --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
         'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
         sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: #f4f7f6;
-    /* Light background */
-    color: #333;
-    /* Default text color */
-}
-
-code {
-    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    --font-family-mono: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
         monospace;
 }
 
+/* Global Resets & Base Styles */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    /* Ensure no default margin */
+    font-family: var(--font-family-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: linear-gradient(135deg, var(--bg-color-start), var(--bg-color-end));
+    background-attachment: fixed;
+    /* Keep gradient fixed during scroll */
+    color: var(--text-color);
+    line-height: 1.6;
+    min-height: 100vh;
+    /* Ensure body takes full viewport height */
+}
+
+code {
+    font-family: var(--font-family-mono);
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.2em 0.4em;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9em;
+}
+
 /* Add more global styles or resets here */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+    color: var(--primary-color-dark);
+    text-decoration: underline;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-bottom: var(--spacing-md);
+    line-height: 1.3;
+}

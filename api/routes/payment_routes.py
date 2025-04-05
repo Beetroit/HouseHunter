@@ -1,20 +1,19 @@
 import uuid
 from typing import List  # Import List
 
+from models.base import ErrorResponse
+from models.rent_payment import RentPaymentCreateManual, RentPaymentResponse
 from quart import Blueprint, current_app
 from quart_auth import login_required  # Keep login_required, remove current_user
 from quart_schema import validate_request, validate_response
-
-from api.models.base import ErrorResponse
-from api.models.rent_payment import RentPaymentCreateManual, RentPaymentResponse
-from api.services.database import get_session
-from api.services.exceptions import (
+from services.database import get_session
+from services.exceptions import (
     AuthorizationException,
     InvalidOperationException,  # Although not used in this endpoint yet
     LeaseNotFoundException,
 )
-from api.services.payment_service import PaymentService
-from api.utils.auth_helpers import get_current_user_object  # Import the helper
+from services.payment_service import PaymentService
+from utils.auth_helpers import get_current_user_object  # Import the helper
 
 bp = Blueprint("payment_routes", __name__, url_prefix="/api/payments")
 
@@ -23,12 +22,10 @@ bp = Blueprint("payment_routes", __name__, url_prefix="/api/payments")
 @login_required
 @validate_request(RentPaymentCreateManual)
 @validate_response(RentPaymentResponse, status_code=201)
-@validate_response(
-    ErrorResponse, status_code=400, description="Invalid input or operation"
-)
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
-@validate_response(ErrorResponse, status_code=403, description="Forbidden")
-@validate_response(ErrorResponse, status_code=404, description="Not Found")
+@validate_response(ErrorResponse, status_code=400)
+@validate_response(ErrorResponse, status_code=401)
+@validate_response(ErrorResponse, status_code=403)
+@validate_response(ErrorResponse, status_code=404)
 async def record_manual_payment_route(data: RentPaymentCreateManual):
     """
     Records a manual rent payment against a lease.
@@ -65,9 +62,9 @@ async def record_manual_payment_route(data: RentPaymentCreateManual):
 @bp.route("/leases/<uuid:lease_id>/payments", methods=["GET"])
 @login_required
 @validate_response(List[RentPaymentResponse])
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
-@validate_response(ErrorResponse, status_code=403, description="Forbidden")
-@validate_response(ErrorResponse, status_code=404, description="Not Found")
+@validate_response(ErrorResponse, status_code=401)
+@validate_response(ErrorResponse, status_code=403)
+@validate_response(ErrorResponse, status_code=404)
 async def get_lease_payments_route(lease_id: uuid.UUID):
     """
     Get all rent payment records for a specific lease.

@@ -15,9 +15,9 @@ from quart_auth import (
 from quart_schema import tag, validate_request, validate_response
 from services.database import get_session
 from services.exceptions import (
+    AuthorizationException,  # Use renamed AuthorizationException
     EmailAlreadyExistsException,
     InvalidCredentialsException,
-    UnauthorizedException,  # Import UnauthorizedException
     UserNotFoundException,
 )
 from services.user_service import UserService
@@ -104,7 +104,10 @@ async def get_current_user() -> UserResponse:
         user = await get_current_user_object()
         # Convert the SQLAlchemy User model to Pydantic UserResponse
         return UserResponse.model_validate(user)
-    except (UnauthorizedException, UserNotFoundException) as e:
+    except (
+        AuthorizationException,
+        UserNotFoundException,
+    ) as e:  # Use renamed exception
         # If helper raises error (e.g., user deleted), log out and re-raise
         logout_user()
         raise e

@@ -1,26 +1,25 @@
-from typing import List
 import uuid  # Import List
+from typing import List
 
-from quart import Blueprint, current_app
-from quart_auth import login_required
-from quart_schema import validate_request, validate_response
-
-from api.models.base import ErrorResponse
-from api.models.maintenance_request import (
+from models.base import ErrorResponse
+from models.maintenance_request import (
     MaintenanceRequestCreate,
     MaintenanceRequestResponse,
     MaintenanceRequestUpdate,  # Import MaintenanceRequestUpdate
 )
-from api.models.user import User
-from api.services.database import get_session
-from api.services.exceptions import (
+from models.user import User
+from quart import Blueprint, current_app
+from quart_auth import login_required
+from quart_schema import validate_request, validate_response
+from services.database import get_session
+from services.exceptions import (
     AuthorizationException,
     InvalidOperationException,
     MaintenanceRequestNotFoundException,  # Import MaintenanceRequestNotFoundException
     PropertyNotFoundException,
 )
-from api.services.maintenance_service import MaintenanceService
-from api.utils.auth_helpers import get_current_user_object
+from services.maintenance_service import MaintenanceService
+from utils.auth_helpers import get_current_user_object
 
 bp = Blueprint("maintenance_routes", __name__, url_prefix="/api/maintenance")
 
@@ -29,12 +28,10 @@ bp = Blueprint("maintenance_routes", __name__, url_prefix="/api/maintenance")
 @login_required
 @validate_request(MaintenanceRequestCreate)
 @validate_response(MaintenanceRequestResponse, status_code=201)
-@validate_response(
-    ErrorResponse, status_code=400, description="Invalid input or operation"
-)
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
-@validate_response(ErrorResponse, status_code=403, description="Forbidden")
-@validate_response(ErrorResponse, status_code=404, description="Not Found")
+@validate_response(ErrorResponse, status_code=400)
+@validate_response(ErrorResponse, status_code=401)
+@validate_response(ErrorResponse, status_code=403)
+@validate_response(ErrorResponse, status_code=404)
 async def submit_maintenance_request(data: MaintenanceRequestCreate):
     """
     Submits a new maintenance request for a property.
@@ -76,7 +73,7 @@ async def submit_maintenance_request(data: MaintenanceRequestCreate):
 @bp.route("/requests/my-submitted", methods=["GET"])
 @login_required
 @validate_response(List[MaintenanceRequestResponse])  # Use imported List
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
+@validate_response(ErrorResponse, status_code=401)
 async def get_my_submitted_requests():
     """
     Get all maintenance requests submitted by the current user.
@@ -102,7 +99,7 @@ async def get_my_submitted_requests():
 @bp.route("/requests/my-assigned", methods=["GET"])
 @login_required
 @validate_response(List[MaintenanceRequestResponse])
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
+@validate_response(ErrorResponse, status_code=401)
 async def get_my_assigned_requests():
     """
     Get all maintenance requests assigned to the current user (landlord/agent).
@@ -130,12 +127,10 @@ async def get_my_assigned_requests():
 @login_required
 @validate_request(MaintenanceRequestUpdate)
 @validate_response(MaintenanceRequestResponse)
-@validate_response(
-    ErrorResponse, status_code=400, description="Invalid input or operation"
-)
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
-@validate_response(ErrorResponse, status_code=403, description="Forbidden")
-@validate_response(ErrorResponse, status_code=404, description="Not Found")
+@validate_response(ErrorResponse, status_code=400)
+@validate_response(ErrorResponse, status_code=401)
+@validate_response(ErrorResponse, status_code=403)
+@validate_response(ErrorResponse, status_code=404)
 async def update_maintenance_request_status(
     request_id: uuid.UUID, data: MaintenanceRequestUpdate
 ):

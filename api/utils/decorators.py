@@ -5,7 +5,10 @@ from models.user import UserRole  # Import User for type hint, UserRole for chec
 from quart import current_app
 from quart_auth import current_user, login_required
 from services.database import get_session
-from services.exceptions import UnauthorizedException, UserNotFoundException
+from services.exceptions import (  # Added AuthorizationException
+    AuthorizationException,
+    UserNotFoundException,
+)
 from services.user_service import UserService  # To fetch full user object if needed
 
 
@@ -21,7 +24,9 @@ def admin_required(func: Callable) -> Callable:
         user_id_str = current_user.auth_id
         if not user_id_str:
             # Should be caught by @login_required, but defensive check
-            raise UnauthorizedException("Authentication required.")
+            raise AuthorizationException(
+                "Authentication required."
+            )  # Use renamed exception
 
         # Fetch the full user object to check the role
         # This adds a DB query, consider storing role in session if performance critical
@@ -42,7 +47,9 @@ def admin_required(func: Callable) -> Callable:
                 )
                 # Use abort(403) for Forbidden, or raise custom exception
                 # abort(403, "Admin privileges required.")
-                raise UnauthorizedException("Admin privileges required.")
+                raise AuthorizationException(
+                    "Admin privileges required."
+                )  # Use renamed exception
 
         # If checks pass, call the original route function
         return await func(*args, **kwargs)

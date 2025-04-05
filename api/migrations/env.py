@@ -4,14 +4,13 @@ from logging.config import fileConfig
 
 from alembic import context
 from config import config as config_obj  # Adjust if your config object is elsewhere
-from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Import your Base model and application configuration
 # Ensure these paths are correct for your project structure
 from models import *  # Adjust if your Base model is elsewhere
-
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

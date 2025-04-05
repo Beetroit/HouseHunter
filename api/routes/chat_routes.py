@@ -23,11 +23,11 @@ from redis.asyncio import Redis
 from services.chat_service import ChatService
 from services.database import get_session
 from services.exceptions import (  # Import more exceptions
+    AuthorizationException,  # Use renamed exception
     ChatException,
     ChatNotFoundException,
     InvalidRequestException,
     PropertyNotFoundException,
-    UnauthorizedException,
     UserNotFoundException,  # Added
 )
 
@@ -39,7 +39,7 @@ bp = Blueprint("chat", __name__)  # Removed url_prefix
 # Removed in-memory active_connections dictionary in favor of Redis Pub/Sub
 
 
-# Removed local helper function definition, using shared one from api.utils.auth_helpers
+# Removed local helper function definition, using shared one from utils.auth_helpers
 # --- HTTP Route for Initiating Chat ---
 @bp.route("/initiate/<uuid:property_id>", methods=["POST"])
 @login_required
@@ -195,7 +195,10 @@ async def get_messages(chat_id: uuid.UUID, query_args: GetMessagesQueryArgs):
                 per_page=query_args.per_page,
                 total_pages=total_pages,
             )
-        except (ChatNotFoundException, UnauthorizedException) as e:
+        except (
+            ChatNotFoundException,
+            AuthorizationException,
+        ) as e:  # Use renamed exception
             # Let global handler manage these specific errors
             raise e
         except Exception as e:
@@ -347,7 +350,10 @@ async def chat_ws(chat_id: uuid.UUID):
         current_app.logger.info(
             f"WebSocket connection cancelled for chat {chat_id}, user {user_id_info}"
         )
-    except (UnauthorizedException, ChatNotFoundException) as e:
+    except (
+        AuthorizationException,
+        ChatNotFoundException,
+    ) as e:  # Use renamed exception
         # Should be caught before accept(), but handle just in case
         current_app.logger.warning(
             f"WebSocket connection rejected for chat {chat_id}: {e}"

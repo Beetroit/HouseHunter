@@ -4,17 +4,17 @@ from quart import Blueprint, current_app
 from quart_auth import login_required  # Remove current_user
 from quart_schema import validate_request, validate_response
 
-from api.models.base import ErrorResponse  # For error responses
-from api.models.lease import LeaseCreate, LeaseResponse
-from api.services.database import get_session
-from api.services.exceptions import (
+from models.base import ErrorResponse  # For error responses
+from models.lease import LeaseCreate, LeaseResponse
+from services.database import get_session
+from services.exceptions import (
     AuthorizationException,
     InvalidOperationException,
     PropertyNotFoundException,
     UserNotFoundException,
 )
-from api.services.lease_service import LeaseService
-from api.utils.auth_helpers import get_current_user_object  # Import the helper
+from services.lease_service import LeaseService
+from utils.auth_helpers import get_current_user_object  # Import the helper
 
 bp = Blueprint("lease_routes", __name__, url_prefix="/api/leases")
 
@@ -23,12 +23,10 @@ bp = Blueprint("lease_routes", __name__, url_prefix="/api/leases")
 @login_required
 @validate_request(LeaseCreate)
 @validate_response(LeaseResponse, status_code=201)
-@validate_response(
-    ErrorResponse, status_code=400, description="Invalid input or operation"
-)
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
-@validate_response(ErrorResponse, status_code=403, description="Forbidden")
-@validate_response(ErrorResponse, status_code=404, description="Not Found")
+@validate_response(ErrorResponse, status_code=400)
+@validate_response(ErrorResponse, status_code=401)
+@validate_response(ErrorResponse, status_code=403)
+@validate_response(ErrorResponse, status_code=404)
 async def create_lease(data: LeaseCreate):
     """
     Create a new lease agreement.
@@ -68,7 +66,7 @@ async def create_lease(data: LeaseCreate):
 @bp.route("/my-landlord-leases", methods=["GET"])
 @login_required
 @validate_response(List[LeaseResponse])
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
+@validate_response(ErrorResponse, status_code=401)
 async def get_my_landlord_leases():
     """
     Get all leases where the current user is the landlord.
@@ -97,7 +95,7 @@ async def get_my_landlord_leases():
 @bp.route("/my-tenant-leases", methods=["GET"])
 @login_required
 @validate_response(List[LeaseResponse])
-@validate_response(ErrorResponse, status_code=401, description="Unauthorized")
+@validate_response(ErrorResponse, status_code=401)
 async def get_my_tenant_leases():
     """
     Get all leases where the current user is the tenant.

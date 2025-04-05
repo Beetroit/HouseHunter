@@ -9,9 +9,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.exceptions import (
+    AuthorizationException,  # Renamed from UnauthorizedException
     EmailAlreadyExistsException,
     InvalidRequestException,  # Add this import
-    UnauthorizedException,
     UserNotFoundException,
 )
 
@@ -112,7 +112,7 @@ class UserService:
         updating_sensitive = sensitive_fields.intersection(update_dict.keys())
 
         if updating_sensitive and requesting_user.role != UserRole.ADMIN:
-            raise UnauthorizedException(
+            raise AuthorizationException(  # Use renamed exception
                 f"Admin privileges required to update fields: {', '.join(updating_sensitive)}"
             )
 

@@ -22,11 +22,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from services.exceptions import (
+    AuthorizationException,  # Renamed from UnauthorizedException
     FileNotAllowedException,
     InvalidRequestException,
     PropertyNotFoundException,
     StorageException,
-    UnauthorizedException,  # Add DocumentNotFoundException if it exists or define it
 )
 from services.storage import StorageInterface
 
@@ -89,7 +89,7 @@ class PropertyService:
     ) -> Property:
         """Create a new property listing."""
         if requesting_user.role not in [UserRole.AGENT, UserRole.ADMIN]:
-            raise UnauthorizedException("Only Agents or Admins can create listings.")
+            raise AuthorizationException("Only Agents or Admins can create listings.")
 
         lister = requesting_user
         if not lister or not lister.id:
@@ -171,7 +171,7 @@ class PropertyService:
         is_owner = prop.owner_id == requesting_user.id
         is_admin = requesting_user.role == UserRole.ADMIN
         if not (is_lister or is_owner or is_admin):
-            raise UnauthorizedException(
+            raise AuthorizationException(
                 "You are not authorized to update this property."
             )
 
@@ -221,7 +221,7 @@ class PropertyService:
                 del update_dict[
                     "status"
                 ]  # Silently ignore or raise UnauthorizedException
-                # raise UnauthorizedException("Status changes require specific admin actions or allowed user actions (e.g., unlisting).")
+                # raise AuthorizationException("Status changes require specific admin actions or allowed user actions (e.g., unlisting).")
 
         if not update_dict:
             raise InvalidRequestException("No update data provided.")
@@ -271,7 +271,7 @@ class PropertyService:
         is_owner = prop.owner_id == requesting_user.id
         is_admin = requesting_user.role == UserRole.ADMIN
         if not (is_lister or is_owner or is_admin):
-            raise UnauthorizedException(
+            raise AuthorizationException(
                 "You are not authorized to delete this property."
             )
 
@@ -506,7 +506,7 @@ class PropertyService:
         is_owner = prop.owner_id == requesting_user.id
         is_admin = requesting_user.role == UserRole.ADMIN
         if not (is_lister or is_owner or is_admin):
-            raise UnauthorizedException(
+            raise AuthorizationException(
                 "You are not authorized to add images to this property."
             )
 
@@ -617,7 +617,7 @@ class PropertyService:
         is_owner = prop.owner_id == requesting_user.id
         is_admin = requesting_user.role == UserRole.ADMIN
         if not (is_lister or is_owner or is_admin):
-            raise UnauthorizedException(
+            raise AuthorizationException(
                 "You are not authorized to delete images from this property."
             )
 
@@ -684,7 +684,7 @@ class PropertyService:
         is_owner = prop.owner_id == requesting_user.id
         is_admin = requesting_user.role == UserRole.ADMIN
         if not (is_lister or is_owner or is_admin):
-            raise UnauthorizedException(
+            raise AuthorizationException(
                 "You are not authorized to add verification documents to this property."
             )
 
@@ -797,7 +797,7 @@ class PropertyService:
         is_owner = prop.owner_id == requesting_user.id
         is_admin = requesting_user.role == UserRole.ADMIN
         if not (is_uploader or is_lister or is_owner or is_admin):
-            raise UnauthorizedException(
+            raise AuthorizationException(
                 "You are not authorized to delete this verification document."
             )
 

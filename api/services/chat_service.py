@@ -11,11 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from services.exceptions import (
+    AuthorizationException,  # Use renamed exception
     ChatException,  # Import ChatException
     ChatNotFoundException,
     InvalidRequestException,
     PropertyNotFoundException,
-    UnauthorizedException,
     UserNotFoundException,  # Added
 )
 
@@ -197,7 +197,9 @@ class ChatService:
             requesting_user.id == chat.initiator_id
             or requesting_user.id == chat.property_user_id
         ):
-            raise UnauthorizedException("You are not authorized to access this chat.")
+            raise AuthorizationException(
+                "You are not authorized to access this chat."
+            )  # Use renamed exception
 
         return chat
 

@@ -19,8 +19,8 @@ from quart_auth import login_required
 from quart_schema import tag, validate_querystring, validate_request, validate_response
 from services.database import get_session
 from services.exceptions import (
+    AuthorizationException,  # Use renamed exception
     EmailAlreadyExistsException,
-    UnauthorizedException,
     UserNotFoundException,  # Import InvalidRequestException
 )
 from services.user_service import UserService
@@ -75,7 +75,7 @@ async def update_me(data: UpdateUserRequest):
         except (
             UserNotFoundException,
             EmailAlreadyExistsException,
-            UnauthorizedException,
+            AuthorizationException,  # Use renamed exception
         ) as e:
             await db_session.rollback()
             raise e

@@ -1,14 +1,14 @@
 import uuid
 from typing import List
 
+from models.lease import Lease, LeaseCreate, LeaseUpdate
+from models.property import Property, PropertyStatus
+from models.user import User, UserRole
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from api.models.lease import Lease, LeaseCreate, LeaseUpdate
-from api.models.property import Property, PropertyStatus
-from api.models.user import User, UserRole
-from api.services.exceptions import (
+from services.exceptions import (
     AuthorizationException,
     InvalidOperationException,
     LeaseNotFoundException,

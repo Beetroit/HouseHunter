@@ -18,12 +18,12 @@ from quart_auth import current_user, login_required
 from quart_schema import tag, validate_querystring, validate_request, validate_response
 from services.database import get_session
 from services.exceptions import (
+    AuthorizationException,  # Use renamed exception
     DocumentNotFoundException,  # Assuming this exists or is defined elsewhere
     FileNotAllowedException,
     InvalidRequestException,
     PropertyNotFoundException,
     StorageException,
-    UnauthorizedException,
 )
 from services.property_service import PropertyService
 from utils.auth_helpers import get_current_user_object
@@ -63,7 +63,10 @@ async def create_property(data: CreatePropertyRequest) -> PropertyResponse:
                 f"Property created: {new_property.id} by user {requesting_user.id}"
             )
             return PropertyResponse.model_validate(new_property)
-        except (InvalidRequestException, UnauthorizedException) as e:
+        except (
+            InvalidRequestException,
+            AuthorizationException,
+        ) as e:  # Use renamed exception
             await db_session.rollback()
             raise e
         except Exception as e:
@@ -85,7 +88,7 @@ async def list_properties(
     try:
         if await current_user.is_authenticated:
             requesting_user = await get_current_user_object()
-    except UnauthorizedException:
+    except AuthorizationException:  # Use renamed exception
         pass  # Proceed as unauthenticated user
 
     async with get_session() as db_session:
@@ -154,7 +157,7 @@ async def get_property(property_id: uuid.UUID) -> PropertyResponse:
     try:
         if await current_user.is_authenticated:
             requesting_user = await get_current_user_object()
-    except UnauthorizedException:
+    except AuthorizationException:  # Use renamed exception
         pass
 
     async with get_session() as db_session:
@@ -197,7 +200,7 @@ async def update_property(
             return PropertyResponse.model_validate(updated_property)
         except (
             PropertyNotFoundException,
-            UnauthorizedException,
+            AuthorizationException,  # Use renamed exception
             InvalidRequestException,
         ) as e:
             await db_session.rollback()
@@ -233,7 +236,10 @@ async def delete_property(property_id: uuid.UUID):
                 # This path might not be reachable if service raises exceptions correctly
                 await db_session.rollback()
                 raise ValueError("Failed to delete property.")
-        except (PropertyNotFoundException, UnauthorizedException) as e:
+        except (
+            PropertyNotFoundException,
+            AuthorizationException,
+        ) as e:  # Use renamed exception
             await db_session.rollback()
             raise e
         except Exception as e:
@@ -281,7 +287,7 @@ async def upload_property_image(property_id: uuid.UUID):
             return PropertyImageResponse.model_validate(new_image), 201
         except (
             PropertyNotFoundException,
-            UnauthorizedException,
+            AuthorizationException,  # Use renamed exception
             FileNotAllowedException,
             StorageException,
             InvalidRequestException,
@@ -323,7 +329,7 @@ async def delete_property_image(image_id: uuid.UUID):
                 )  # Use appropriate exception
 
         except (
-            UnauthorizedException,
+            AuthorizationException,  # Use renamed exception
             StorageException,
             DocumentNotFoundException,
         ) as e:  # Catch DocumentNotFound
@@ -385,7 +391,7 @@ async def upload_verification_document(property_id: uuid.UUID):
             return VerificationDocumentResponse.model_validate(new_document), 201
         except (
             PropertyNotFoundException,
-            UnauthorizedException,
+            AuthorizationException,  # Use renamed exception
             FileNotAllowedException,
             StorageException,
             InvalidRequestException,
@@ -429,7 +435,7 @@ async def delete_verification_document(document_id: uuid.UUID):
                 )
 
         except (
-            UnauthorizedException,
+            AuthorizationException,  # Use renamed exception
             StorageException,
             DocumentNotFoundException,
         ) as e:

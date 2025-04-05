@@ -1,19 +1,19 @@
 import uuid
 from typing import List
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
-
-from api.models.lease import Lease
-from api.models.rent_payment import (
+from models.lease import Lease
+from models.rent_payment import (
     PaymentMethod,
     RentPayment,
     RentPaymentCreateManual,
     RentPaymentStatus,
 )
-from api.models.user import User, UserRole
-from api.services.exceptions import (
+from models.user import User, UserRole
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
+
+from services.exceptions import (
     AuthorizationException,
     InvalidOperationException,
     LeaseNotFoundException,

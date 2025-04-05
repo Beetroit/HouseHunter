@@ -2,19 +2,19 @@ import uuid
 from datetime import datetime  # Import datetime
 from typing import List
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
-
-from api.models.maintenance_request import (
+from models.maintenance_request import (
     MaintenanceRequest,
     MaintenanceRequestCreate,
     MaintenanceRequestStatus,
     MaintenanceRequestUpdate,
 )
-from api.models.property import Property
-from api.models.user import User, UserRole
-from api.services.exceptions import (
+from models.property import Property
+from models.user import User, UserRole
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
+
+from services.exceptions import (
     AuthorizationException,
     InvalidOperationException,
     MaintenanceRequestNotFoundException,  # Need to define this

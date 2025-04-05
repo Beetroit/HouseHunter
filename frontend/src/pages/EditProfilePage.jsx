@@ -5,7 +5,7 @@ import apiService from '../services/apiService.jsx';
 import './FormStyles.css'; // Reuse form styles
 
 function EditProfilePage() {
-    const { currentUser, fetchCurrentUser } = useAuth(); // Get user and function to refresh context
+    const { currentUser, checkAuthStatus } = useAuth(); // Get user and function to refresh context
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         first_name: '',
@@ -92,7 +92,7 @@ function EditProfilePage() {
             const updatedUser = await apiService.updateMyProfile(updatePayload);
             setSuccess('Profile updated successfully!');
             // Refresh user context to reflect changes globally
-            await fetchCurrentUser();
+            await checkAuthStatus(); // Use the correct function from context
             // Optionally navigate away or clear form after success
             // navigate('/dashboard');
         } catch (err) {

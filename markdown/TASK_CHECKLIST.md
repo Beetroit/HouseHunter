@@ -35,6 +35,7 @@
         * *Summary (2025-04-03):* Created `api/services/exceptions.py`. Added `ChatNotFoundException`.
     * [X] `services/user_service.py`: Implemented `UserService` for user CRUD, password handling, profile retrieval.
         * *Summary (2025-04-03):* Service created. Updated for role checks and added `get_public_user_profile`.
+        * *Update (2025-04-05):* Added `search_users` method for owner search functionality.
 - [X] **Authentication (`api/`):**
     * [X] `routes/auth_routes.py`: Implemented registration, login, logout, get current user endpoints.
         * *Summary (2025-04-03):* Created `api/routes/auth_routes.py`.
@@ -58,6 +59,7 @@
 - [X] **Property Listing Frontend Create UI/API (`frontend/`):**
     * [X] `CreateListingPage.jsx`: Component created, integrated, includes `owner_id`, restricted to AGENT/ADMIN.
         * *Summary (2025-04-03):* Component created, `owner_id` added, route protection implemented.
+        * *Update (2025-04-05):* Implemented improvements based on `markdown/CREATE_LISTING_IMPROVEMENT_PLAN.md`: Added missing fields (price, pricing_type, sqft, city, address), corrected input types, added Owner Search (button + dropdown), Image Upload, Verification Document Upload (with type selection), grouped fields into fieldsets, fixed dropdown CSS.
 - [X] **Property Listing Frontend View UI/API (`frontend/`):**
     * [X] `HomePage.jsx`: Displays public, verified listings (initially may show all, needs filter update).
         * *Summary (2025-04-03):* Component created.
@@ -72,6 +74,7 @@
         * *Summary (2025-04-03/04):* Component created, route added. Image upload UI/API implemented.
     * [X] `apiService.jsx` Updates: `getMyProperties`, `updateProperty`, `deleteProperty` functions added.
         * *Summary (2025-04-03):* Functions added.
+        * *Update (2025-04-05):* Added `searchUsers` function to support owner search on Create Listing page.
 - [X] **Frontend Localization:** Basic setup implemented.
     * [X] Implement i18n library (e.g., `i18next`) for UI text.
         * *Summary (2025-04-05):* Installed `i18next`, `react-i18next`, `i18next-browser-languagedetector`. Created `frontend/src/i18n.js` config file and imported into `main.jsx`.
@@ -101,6 +104,8 @@
         * [X] Create API endpoint for admins to view/download documents for a pending property.
             * *Summary (2025-04-05):* Added GET `/properties/{id}/verification-documents` endpoint to `admin_routes.py`. (Note: Download functionality not implemented, only listing).
 - **Property Verification Workflow (`frontend/`):**
+- [X] **User Search Endpoint (`api/`):** Backend implemented for searching users.
+    * *Summary (2025-04-05):* Added `UserSearchQueryArgs`, `UserSearchResultResponse`, `UserSearchResponse` schemas to `models/user.py`. Added `/search` endpoint to `user_routes.py` with validation and call to `user_service.search_users`.
     * [X] **Listing Creation/Edit:** Verification document upload and status display added.
         * [X] Add section for uploading required verification documents (Proof of Ownership, Lister ID) in `CreateListingPage.jsx` and `EditListingPage.jsx`. Integrate with new API endpoint.
             * *Summary (2025-04-05):* Added document upload UI and integrated `uploadVerificationDocument` API call in both create and edit pages.

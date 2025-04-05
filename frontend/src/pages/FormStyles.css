@@ -107,6 +107,15 @@
     /* Make space for arrow */
 }
 
+
+/* Style select dropdown options for better visibility */
+.form-group select option {
+    background-color: #ffffff;
+    /* White background */
+    color: #333333;
+    /* Dark text */
+}
+
 button[type="submit"] {
     display: block;
     width: 100%;
@@ -149,14 +158,119 @@ button[type="submit"]:disabled {
 /* Using the consistent error message style from App.css */
 /* .error-message class is already defined globally in App.css */
 /* Remove the old definition */
-/*
-.error-message {
-    color: #dc3545;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    padding: 0.75rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-    text-align: center;
+
+/* Owner Search Results */
+
+
+/* Owner Search Results */
+.search-results {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--border-radius-md);
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Slightly more opaque */
 }
-*/
+
+.search-results li {
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--glass-border-color);
+}
+
+.search-results li:last-child {
+    border-bottom: none;
+}
+
+.search-results li:hover {
+    background-color: var(--primary-color-light);
+    color: white;
+}
+
+/* Staged Files (Images/Documents) List */
+.staged-files {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 1px dashed var(--glass-border-color);
+    border-radius: var(--border-radius-md);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.staged-files h4 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.95rem;
+    color: var(--text-color-muted);
+}
+
+.staged-files ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.staged-files li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.staged-files li:last-child {
+    border-bottom: none;
+}
+
+.staged-files li button {
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    background-color: var(--danger-color-light);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    margin-left: var(--spacing-md);
+}
+
+.staged-files li button:hover {
+    background-color: var(--danger-color);
+}
+
+.staged-files li button:disabled {
+    background-color: var(--secondary-color);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.search-results {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--border-radius-md);
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Slightly more opaque */
+}
+
+.search-results li {
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--glass-border-color);
+}
+
+.search-results li:last-child {
+    border-bottom: none;
+}
+
+.search-results li:hover {
+    background-color: var(--primary-color-light);
+    color: white;
+}

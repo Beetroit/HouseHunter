@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 
 from models.user import CreateUserRequest, UpdateUserRequest, User, UserRole
 from passlib.context import CryptContext
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -225,3 +225,27 @@ class UserService:
         except Exception as e:
             await self.session.rollback()
             raise ValueError(f"Could not verify agent {user_id}: {e}") from e
+
+    async def search_users(self, query: str, limit: int = 10) -> List[User]:
+        """Search for users by email, first name, or last name."""
+        if not query:
+            return []
+
+        search_term = f"%{query.lower()}%"
+
+        stmt = (
+            select(User)
+            .where(
+                or_(
+                    User.email.ilike(search_term),
+                    User.first_name.ilike(search_term),
+                    User.last_name.ilike(search_term),
+                )
+            )
+            .order_by(User.email)  # Or order by relevance if possible/needed
+            .limit(limit)
+        )
+
+        result = await self.session.execute(stmt)
+        users = list(result.scalars().all())
+        return users

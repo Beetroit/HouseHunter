@@ -391,6 +391,24 @@ const apiService = {
     },
 
 
+
+    /**
+     * Searches for users based on a query string.
+     * @param {string} query - The search term (email, first name, last name).
+     * @returns {Promise<Array<object>>} - An array of user objects matching the search.
+     */
+    searchUsers: async (query) => {
+        console.log(`Searching users with query: ${query}`);
+        try {
+            const response = await apiClient.get('/users/search', { params: { q: query } });
+            console.log('Search users response:', response.data);
+            return response.data.items || []; // Assuming backend returns { items: [...] }
+        } catch (error) {
+            console.error('Search Users API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to search users');
+        }
+    },
+
     // --- Image API Calls ---
 
     /**

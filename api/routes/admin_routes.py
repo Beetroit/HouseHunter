@@ -27,6 +27,7 @@ from services.property_service import PropertyService
 
 # Import UserService
 from services.user_service import UserService
+from utils.auth_helpers import get_current_user_object
 from utils.decorators import admin_required
 
 # Define the Blueprint
@@ -70,7 +71,7 @@ async def list_properties_for_review(
         items, total_items, total_pages = await property_service.list_properties(
             page=query_args.page,
             per_page=query_args.per_page,
-            requesting_user=await current_user.get_user(),
+            requesting_user=await get_current_user_object(),
             statuses_filter=statuses_to_fetch,
         )
         property_responses = [PropertyResponse.model_validate(item) for item in items]
@@ -95,7 +96,7 @@ async def verify_property(property_id: uuid.UUID) -> PropertyResponse:
             verified_property = await property_service.verify_property(property_id)
             await db_session.commit()
             current_app.logger.info(
-                f"Property verified: {property_id} by admin {await current_user.get_id()}"
+                f"Property verified: {property_id} by admin {current_user.auth_id}"
             )
             return PropertyResponse.model_validate(verified_property)
         except PropertyNotFoundException as e:
@@ -126,7 +127,7 @@ async def reject_property(
             )
             await db_session.commit()
             current_app.logger.info(
-                f"Property rejected: {property_id} by admin {await current_user.get_id()}. Notes: '{data.notes or 'N/A'}'"
+                f"Property rejected: {property_id} by admin {current_user.auth_id}. Notes: '{data.notes or 'N/A'}'"
             )
             return PropertyResponse.model_validate(rejected_property)
         except PropertyNotFoundException as e:
@@ -157,7 +158,7 @@ async def request_info_property(
             )
             await db_session.commit()
             current_app.logger.info(
-                f"Property needs info: {property_id} by admin {await current_user.get_id()}. Notes: '{data.notes}'"
+                f"Property needs info: {property_id} by admin {current_user.auth_id}. Notes: '{data.notes}'"
             )
             return PropertyResponse.model_validate(needs_info_property)
         except (PropertyNotFoundException, InvalidRequestException) as e:
@@ -182,7 +183,7 @@ async def list_property_verification_documents(
     property_id: uuid.UUID,
 ) -> List[VerificationDocumentResponse]:
     """List verification documents uploaded for a specific property."""
-    requesting_user = await current_user.get_user()
+    requesting_user = await get_current_user_object()
     async with get_session() as db_session:
         property_service = PropertyService(db_session)
         prop = await property_service.get_property_by_id(
@@ -214,7 +215,7 @@ async def verify_agent_user(user_id: uuid.UUID) -> UserResponse:
             verified_agent = await user_service.verify_agent(user_id)
             await db_session.commit()
             current_app.logger.info(
-                f"Agent verified: {user_id} by admin {await current_user.get_id()}"
+                f"Agent verified: {user_id} by admin {current_user.auth_id}"
             )
             # Return the full user response, which now includes is_verified_agent=True
             return UserResponse.model_validate(verified_agent)

@@ -8,6 +8,8 @@ from models.user import (
     UpdateUserRequest,
     UserResponse,
     UserRole,
+    UserSearchQueryArgs,  # Added for search
+    UserSearchResponse,  # Added for search
 )
 from pydantic import BaseModel, Field  # Import BaseModel and Field
 from quart import Blueprint, current_app
@@ -103,6 +105,29 @@ async def get_user_profile(user_id: uuid.UUID):
                 f"Error fetching profile for user {user_id}: {e}", exc_info=True
             )
             raise ValueError("Failed to fetch user profile due to an unexpected error.")
+
+
+@bp.route("/search", methods=["GET"])
+@login_required  # Require login to search users
+@validate_querystring(UserSearchQueryArgs)
+@validate_response(UserSearchResponse)
+@tag(["User"])
+async def search_users_endpoint(query_args: UserSearchQueryArgs):
+    """Search for users by email, first name, or last name."""
+    async with get_session() as db_session:
+        user_service = UserService(db_session)
+        try:
+            # Limit results directly in the service call if needed, or handle here
+            users = await user_service.search_users(query=query_args.q, limit=10)
+            # Pydantic will automatically convert the list of User ORM objects
+            # to UserSearchResultResponse based on the UserSearchResponse schema
+            return UserSearchResponse(items=users)
+        except Exception as e:
+            current_app.logger.error(
+                f"Error searching users with query '{query_args.q}': {e}", exc_info=True
+            )
+            # Consider a more specific error response if needed
+            raise ValueError("Failed to search users due to an unexpected error.")
 
 
 # --- Admin User Routes ---

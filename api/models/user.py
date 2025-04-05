@@ -217,3 +217,34 @@ class PaginatedUserResponse(BaseModel):
     page: int
     per_page: int
     total_pages: int
+
+
+# --- Schemas for User Search ---
+
+
+class UserSearchQueryArgs(BaseModel):
+    """Query parameters for user search."""
+
+    q: str = Field(
+        ...,
+        min_length=1,
+        description="Search query for email, first name, or last name",
+    )
+
+
+class UserSearchResultResponse(BaseModel):
+    """Schema for individual user search results."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    email: EmailStr
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role: UserRole  # Add role to the search result
+
+
+class UserSearchResponse(BaseModel):
+    """Response schema for user search results."""
+
+    items: List[UserSearchResultResponse]

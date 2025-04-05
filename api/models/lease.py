@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional  # Import List
 
 from pydantic import BaseModel, Field
 from sqlalchemy import Date, DateTime, Float, ForeignKey, String, Text, func
@@ -22,6 +22,7 @@ from models.user import (
 # fmt: off
 if TYPE_CHECKING:
     from .property import Property
+    from .rent_payment import RentPayment  # Import RentPayment
     from .user import User
 # fmt: on
 
@@ -77,7 +78,9 @@ class Lease(Base):
     landlord: Mapped["User"] = relationship(
         foreign_keys=[landlord_id], back_populates="leases_as_landlord"
     )
-    # rent_payments: Mapped[List["RentPayment"]] = relationship(back_populates="lease", cascade="all, delete-orphan") # Add when RentPayment model is created
+    rent_payments: Mapped[List["RentPayment"]] = relationship(
+        back_populates="lease", cascade="all, delete-orphan"
+    )
 
     def to_dict(self):
         return {

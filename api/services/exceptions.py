@@ -39,11 +39,13 @@ class PropertyNotFoundException(ServiceException):
         super().__init__(message, status_code)
 
 
-class UnauthorizedException(ServiceException):
+class AuthorizationException(ServiceException):  # Renamed from UnauthorizedException
     """Raised when a user is not authorized to perform an action."""
 
     def __init__(
-        self, message: str = "Unauthorized action", status_code: int = 403
+        self,
+        message: str = "User not authorized to perform this action",
+        status_code: int = 403,
     ):  # 403 Forbidden
         super().__init__(message, status_code)
 
@@ -129,4 +131,36 @@ class DocumentNotFoundException(ServiceException):
     """Raised when a document is not found."""
 
     def __init__(self, message: str = "Document not found", status_code: int = 404):
+        super().__init__(message, status_code)
+
+
+class MaintenanceRequestNotFoundException(ServiceException):
+    """Raised when a maintenance request is not found."""
+
+    def __init__(
+        self, message: str = "Maintenance request not found", status_code: int = 404
+    ):
+        super().__init__(message, status_code)
+
+
+class LeaseNotFoundException(ServiceException):
+    """Raised when a lease is not found."""
+
+    def __init__(self, message: str = "Lease not found", status_code: int = 404):
+        super().__init__(message, status_code)
+
+
+class InvalidOperationException(ServiceException):
+    """Raised when an operation is invalid given the current state."""
+
+    def __init__(self, message: str = "Invalid operation", status_code: int = 400):
+        super().__init__(message, status_code)
+
+
+class RentPaymentNotFoundException(ServiceException):
+    """Raised when a rent payment record is not found."""
+
+    def __init__(
+        self, message: str = "Rent payment record not found", status_code: int = 404
+    ):
         super().__init__(message, status_code)

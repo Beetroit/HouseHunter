@@ -27,6 +27,9 @@ from models.user import UserResponse
 if TYPE_CHECKING:
     from models.chat import Chat  # Add Chat import for relationship
     from models.lease import Lease  # Add Lease import
+    from models.maintenance_request import (
+        MaintenanceRequest,  # Add MaintenanceRequest import
+    )
     from models.user import User
     from models.verification_document import VerificationDocument  # Add this import
 
@@ -207,6 +210,13 @@ class Property(Base):
         back_populates="property",
         cascade="all, delete-orphan",  # If a property is deleted, associated leases might be too (consider implications)
         lazy="selectin",
+    )
+    maintenance_requests: Mapped[List["MaintenanceRequest"]] = relationship(
+        "MaintenanceRequest",
+        back_populates="property",
+        cascade="all, delete-orphan",  # If property deleted, delete requests? Or handle differently?
+        lazy="selectin",
+        order_by="MaintenanceRequest.created_at.desc()",  # Show newest first
     )
 
 

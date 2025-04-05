@@ -21,6 +21,9 @@ from routes import (
     auth_routes,
     chat_routes,  # Import chat routes
     favorite_routes,  # Import favorite routes
+    lease_routes,  # Import lease routes
+    maintenance_routes,  # Import maintenance routes
+    payment_routes,  # Import payment routes
     property_routes,
     review_routes,  # Import review routes
     user_routes,  # Import user routes
@@ -177,6 +180,9 @@ app.register_blueprint(user_routes.bp, url_prefix="/api/users")
 app.register_blueprint(favorite_routes.bp, url_prefix="/api")
 # Register reviews under /api/users as its routes are relative to users
 app.register_blueprint(review_routes.bp, url_prefix="/api/users")
+app.register_blueprint(lease_routes.bp, url_prefix="/api/leases")
+app.register_blueprint(payment_routes.bp, url_prefix="/api/payments")
+app.register_blueprint(maintenance_routes.bp, url_prefix="/api/maintenance")
 
 
 @app.route("/health")

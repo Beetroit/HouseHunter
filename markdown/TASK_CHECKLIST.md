@@ -1,7 +1,6 @@
 # HouseHunter Platform - Task Checklist (Revised 2025-04-05 - Cameroon Focus)
 
-**Instructions for Future Agents:** Please maintain this checklist format. When a task is completed, mark it with `[x]`, add a brief summary of the work done below it, and update the date. Focus priorities are **Verified Listings** and **Core Property Management Tools** for the Cameroon market.
-
+**Instructions for Future Agents:** Please maintain this checklist format. When a task is completed, mark it with `[x]`, add a brief summary of the work done below it, and update the date. Focus priorities are **Verified Listings** and **Core Property Management Tools** for the Cameroon market. **Important:** Before using exceptions or imports, always verify they exist in the relevant files (`api/services/exceptions.py` for exceptions, respective modules for imports). Do not assume existence. Define exceptions before use. Refactor user fetching in routes to use `get_current_user_object` helper.
 
 ## Phase 1: Foundation & Core Backend (Mostly Complete)
 
@@ -33,12 +32,15 @@
 - [X] **Core Services (`api/`):**
     * [X] `services/exceptions.py`: Defined custom service layer exceptions.
         * *Summary (2025-04-03):* Created `api/services/exceptions.py`. Added `ChatNotFoundException`.
+        * *Update (2025-04-05):* Renamed `UnauthorizedException` to `AuthorizationException`. Added `LeaseNotFoundException`, `InvalidOperationException`, `RentPaymentNotFoundException`, `MaintenanceRequestNotFoundException`.
     * [X] `services/user_service.py`: Implemented `UserService` for user CRUD, password handling, profile retrieval.
         * *Summary (2025-04-03):* Service created. Updated for role checks and added `get_public_user_profile`.
         * *Update (2025-04-05):* Added `search_users` method for owner search functionality.
 - [X] **Authentication (`api/`):**
     * [X] `routes/auth_routes.py`: Implemented registration, login, logout, get current user endpoints.
         * *Summary (2025-04-03):* Created `api/routes/auth_routes.py`.
+    * [X] **Refactor User Fetching:** Replaced `current_user.get_user()` with `get_current_user_object()` helper in relevant route files.
+        * *Summary (2025-04-05):* Updated `lease_routes.py` and `payment_routes.py`. (Note: Further checks needed in other route files).
 - [ ] **Localization & Compliance Prep:**
     * [ ] **Bilingual Support Strategy:** Plan for handling English/French in backend models (if needed for content) and API responses.
     * [ ] **Data Privacy Review:** Review user/property data collection against Cameroon's Data Protection Law requirements. Document necessary consent flows.
@@ -143,40 +145,28 @@
 
 ## Phase 4: Core Property Management Tools
 
-- **Digital Lease Management:**
-    * [ ] **Backend (`api/`):**
-        * [ ] Define `Lease` model (property_id, tenant_id, landlord_id, start_date, end_date, rent_amount, payment_day, document_url, status - e.g., ACTIVE, EXPIRED, TERMINATED). Generate migration.
-        * [ ] Define `LeaseAgreementTemplate` model (admin-managed templates).
-        * [ ] Implement `LeaseService` for CRUD operations, potentially generating basic lease documents from templates (or storing uploaded ones).
-        * [ ] Create API endpoints for landlords to create/manage leases, tenants to view their leases.
-    * [ ] **Frontend (`frontend/`):**
-        * [ ] Create `ManageLeasesPage.jsx` for landlords (list leases, add new lease).
-        * [ ] Create form for adding a new lease (select property, tenant, dates, rent). Option to upload existing lease or generate from template (future).
-        * [ ] Create view for tenants to see their current lease details (e.g., in their dashboard).
-- **Tenant Management (Basic):**
-    * [ ] **Backend (`api/`):** Link `Lease` model to `User` model for tenant relationship.
-    * [ ] **Frontend (`frontend/`):** Landlord's `ManageLeasesPage.jsx` implicitly lists tenants associated with active leases for their properties.
-- **Rent Collection & Tracking:**
-    * [ ] **Backend (`api/`):**
-        * [ ] Define `RentPayment` model (lease_id, amount_due, amount_paid, due_date, payment_date, status - e.g., PENDING, PAID, OVERDUE, PARTIAL, method - e.g., MOBILE_MONEY, CASH). Generate migration.
-        * [ ] Implement `PaymentService` or extend `LeaseService`:
-            * [ ] Method to generate expected payments based on lease terms.
-            * [ ] Method to record manual payments (e.g., cash).
-            * [ ] **Mobile Money Integration:** Research Cameroon mobile money APIs (MTN MoMo, Orange Money) for payment initiation and/or status checking. Implement service methods. Requires API credentials/partnership.
-            * [ ] Create API endpoints for landlords to view payment status, record manual payments.
-            * [ ] Create API endpoints for tenants to view payment history/due payments, potentially initiate mobile money payment.
-    * [ ] **Frontend (`frontend/`):**
-        * [ ] **Landlord View:** Enhance `ManageLeasesPage.jsx` or create `RentDashboardPage.jsx` to show payment status per lease/tenant. Add button to record manual payment.
-        * [ ] **Tenant View:** Enhance tenant dashboard to show upcoming rent due, payment history. Add "Pay Rent" button (integrating with Mobile Money API if implemented).
-        * [ ] **Automated Reminders (Basic):** Implement backend logic (scheduled task?) to generate notifications (Phase 6) or update payment status to OVERDUE.
-- **Maintenance Request Management:**
-    * [ ] **Backend (`api/`):**
-        * [ ] Define `MaintenanceRequest` model (property_id, tenant_id, description, photo_url, status - e.g., SUBMITTED, IN_PROGRESS, RESOLVED, CLOSED). Generate migration.
-        * [ ] Implement `MaintenanceService` for CRUD operations.
-        * [ ] Create API endpoints for tenants to submit requests, landlords to view/update requests.
-    * [ ] **Frontend (`frontend/`):**
-        * [ ] **Tenant View:** Add section in tenant dashboard to submit new maintenance requests (form with description, optional photo upload). List existing requests and their status.
-        * [ ] **Landlord View:** Add `MaintenanceDashboardPage.jsx` to list requests for their properties, view details, and update status.
+- [P] **Digital Lease Management:** (Foundations Complete)
+    * [X] **Backend (`api/`):** Defined `Lease`, `LeaseAgreementTemplate` models/schemas. Added relationships to `User`/`Property`. Generated migration. Implemented `LeaseService` (create, get). Created `lease_routes` (POST create, GET my-landlord/my-tenant). Registered blueprint.
+        * *Summary (2025-04-05):* Backend models, service, routes, migration for basic lease management created.
+    * [X] **Frontend (`frontend/`):** Created `ManageLeasesPage.jsx` (landlord view), `LeaseForm.jsx`. Added routes/nav link in `App.jsx`. Added `createLease`, `getMyLeasesAsLandlord`, `getMyLeasesAsTenant` to `apiService.jsx`.
+        * *Summary (2025-04-05):* Frontend pages, form, routing, and API calls for basic lease management created.
+- [P] **Tenant Management (Basic):** (Foundations Complete via Lease)
+    * [X] **Backend (`api/`):** Link established via `Lease` model relationships.
+        * *Summary (2025-04-05):* Tenant/Landlord linked through Lease model.
+    * [X] **Frontend (`frontend/`):** `ManageLeasesPage.jsx` displays tenant info. `DashboardPage.jsx` displays tenant's leases.
+        * *Summary (2025-04-05):* Basic display of tenant/landlord links implemented.
+- [P] **Rent Collection & Tracking:** (Foundations Complete)
+    * [X] **Backend (`api/`):** Defined `RentPayment` model/schemas. Added relationship to `Lease`. Generated migration. Implemented `PaymentService` (record manual, get for lease). Created `payment_routes` (POST record-manual, GET lease payments). Registered blueprint.
+        * *Summary (2025-04-05):* Backend model, service, routes, migration for basic rent tracking created.
+    * [X] **Frontend (`frontend/`):** Enhanced `ManageLeasesPage.jsx` to show payment history and integrated `RecordPaymentModal.jsx`. Added `getLeasePayments`, `recordManualPayment` to `apiService.jsx`. Enhanced `DashboardPage.jsx` to show tenant leases.
+        * *Summary (2025-04-05):* Landlord view enhanced for payment history/recording. Tenant dashboard shows leases.
+    * [ ] **Mobile Money Integration:** Research Cameroon mobile money APIs (MTN MoMo, Orange Money) for payment initiation and/or status checking. Implement service methods. Requires API credentials/partnership.
+    * [ ] **Automated Reminders (Basic):** Implement backend logic (scheduled task?) to generate notifications (Phase 6) or update payment status to OVERDUE.
+- [P] **Maintenance Request Management:** (Foundations Complete)
+    * [X] **Backend (`api/`):** Defined `MaintenanceRequest` model/schemas. Added relationships to `User`/`Property`. Generated migration. Implemented `MaintenanceService` (create, get submitted/assigned, update status). Created `maintenance_routes` (POST submit, GET my-submitted/my-assigned, PUT update status). Registered blueprint.
+        * *Summary (2025-04-05):* Backend model, service, routes, migration for maintenance requests created.
+    * [X] **Frontend (`frontend/`):** Created `SubmitMaintenanceRequestPage.jsx` (tenant form), `MaintenanceDashboardPage.jsx` (landlord view). Added routes/nav link in `App.jsx`. Added `submitMaintenanceRequest`, `getMySubmittedMaintenanceRequests`, `getMyAssignedMaintenanceRequests`, `updateMaintenanceRequestStatus` to `apiService.jsx`. Enhanced `DashboardPage.jsx` to show submitted requests.
+        * *Summary (2025-04-05):* Frontend pages, routing, and API calls for submitting/viewing/managing maintenance requests created.
 
 ## Phase 5: Communication Features (Existing Chat)
 

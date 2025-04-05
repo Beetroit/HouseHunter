@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List, Optional
 if TYPE_CHECKING:
     from .favorite import Favorite  # Import for relationship type hint
     from .lease import Lease  # Add Lease import
+    from .maintenance_request import MaintenanceRequest  # Add MaintenanceRequest import
     from .property import Property
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import Boolean, Integer, String, Text, func  # Add Text
@@ -102,6 +103,21 @@ class User(Base):
         foreign_keys="[Lease.landlord_id]",
         back_populates="landlord",
         lazy="selectin",
+    )
+    # Relationships to Maintenance Requests
+    submitted_maintenance_requests: Mapped[List["MaintenanceRequest"]] = relationship(
+        "MaintenanceRequest",
+        foreign_keys="[MaintenanceRequest.tenant_id]",
+        back_populates="tenant",
+        lazy="selectin",
+        order_by="MaintenanceRequest.created_at.desc()",
+    )
+    assigned_maintenance_requests: Mapped[List["MaintenanceRequest"]] = relationship(
+        "MaintenanceRequest",
+        foreign_keys="[MaintenanceRequest.landlord_id]",
+        back_populates="landlord",
+        lazy="selectin",
+        order_by="MaintenanceRequest.created_at.desc()",
     )
 
     def __repr__(self):

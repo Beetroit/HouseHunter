@@ -5,6 +5,7 @@ import './App.css';
 import { useAuth } from './contexts/AuthContext.jsx'; // Ensure useAuth is imported
 
 import LanguageSwitcher from './components/LanguageSwitcher.jsx'; // Import the switcher
+import LeaseForm from './components/LeaseForm.jsx'; // Import Lease Form component
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'; // Use .jsx extension
 import ChatPage from './pages/ChatPage.jsx'; // Import the ChatPage
 import ChatsListPage from './pages/ChatsListPage.jsx'; // Import the new page component
@@ -13,10 +14,16 @@ import DashboardPage from './pages/DashboardPage.jsx'; // Use .jsx extension
 import EditListingPage from './pages/EditListingPage.jsx';
 import EditProfilePage from './pages/EditProfilePage.jsx';
 import FavoritesPage from './pages/FavoritesPage.jsx'; // Import FavoritesPage
+import ManageLeasesPage from './pages/ManageLeasesPage.jsx'; // Import Manage Leases page
+
 import HomePage from './pages/HomePage.jsx';
 import ListingDetailPage from './pages/ListingDetailPage';
 import LoginPage from './pages/LoginPage.jsx';
+import MaintenanceDashboardPage from './pages/MaintenanceDashboardPage.jsx'; // Import Maintenance Dashboard
 import RegisterPage from './pages/RegisterPage.jsx';
+import SubmitMaintenanceRequestPage from './pages/SubmitMaintenanceRequestPage.jsx'; // Import Maintenance Request page
+
+
 import UserProfilePage from './pages/UserProfilePage.jsx';
 
 
@@ -72,7 +79,14 @@ function App() {
                     <li><Link to="/">{t('nav.home')}</Link></li>
                     {currentUser ? (
                         <>
+                            {/* Add Maintenance Dashboard link if user is agent/admin */}
+                            {(currentUser.role === 'agent' || currentUser.role === 'admin') && (
+                                <li><Link to="/maintenance/dashboard">{t('nav.maintenanceDashboard', 'Maintenance')}</Link></li>
+                            )}
+
                             <li><Link to="/dashboard">{t('nav.dashboard')}</Link></li>
+                            <li><Link to="/manage-leases">{t('nav.manageLeases', 'Manage Leases')}</Link></li> {/* Add Manage Leases link */}
+
                             {/* Add Chats link */}
                             <li><Link to="/chats">{t('nav.myChats')}</Link></li>
                             {/* Add Admin Dashboard link if user is admin */}
@@ -122,6 +136,16 @@ function App() {
                     <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
                     {/* Add protected route for Chats List */}
                     <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
+                    {/* Lease Management Routes */}
+                    <Route path="/manage-leases" element={<ProtectedRoute><ManageLeasesPage /></ProtectedRoute>} />
+                    {/* For creating, wrap LeaseForm in a page component or use directly. Needs role protection. */}
+                    <Route path="/leases/create" element={<ProtectedRoute><AgentOrAdminRoute><LeaseForm /></AgentOrAdminRoute></ProtectedRoute>} />
+                    {/* Maintenance Routes */}
+                    <Route path="/maintenance/dashboard" element={<ProtectedRoute><AgentOrAdminRoute><MaintenanceDashboardPage /></AgentOrAdminRoute></ProtectedRoute>} />
+
+                    <Route path="/maintenance/submit" element={<ProtectedRoute><SubmitMaintenanceRequestPage /></ProtectedRoute>} />
+
+
                     <Route path="*" element={<NotFoundPage />} /> {/* Catch-all for 404 */}
                 </Routes>
             </main>

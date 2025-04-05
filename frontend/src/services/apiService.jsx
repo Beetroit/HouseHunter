@@ -421,9 +421,7 @@ const apiService = {
     uploadPropertyImage: async (propertyId, file, isPrimary = false) => {
         const formData = new FormData();
         formData.append('image', file); // Key 'image' must match backend expectation
-        // Optional: Send is_primary flag if backend supports it via form data or query param
-        // formData.append('is_primary', isPrimary);
-        // Or use query param: const config = { params: { primary: isPrimary } };
+        formData.append('is_primary', isPrimary); // Add isPrimary flag to form data
 
         console.log(`Uploading image for property ${propertyId}`);
         try {
@@ -586,6 +584,192 @@ const apiService = {
         }
     },
 
-};
+
+
+    // --- Lease Management Functions ---
+
+    /**
+     * Creates a new lease agreement.
+     * @param {object} leaseData - Data matching LeaseCreate schema.
+     * @returns {Promise<object>} - The created lease data (LeaseResponse schema).
+     */
+    createLease: async (leaseData) => {
+        console.log('Creating lease with data:', leaseData);
+        try {
+            const response = await apiClient.post('/leases', leaseData);
+            console.log('Create lease response:', response.data);
+            return response.data; // Should be LeaseResponse
+        } catch (error) {
+            console.error('Create Lease API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to create lease');
+        }
+    },
+
+    /**
+     * Fetches all rent payment records for a specific lease.
+     * @param {string} leaseId - The UUID of the lease.
+     * @returns {Promise<Array<object>>} - An array of payment objects (RentPaymentResponse schema).
+     */
+    getLeasePayments: async (leaseId) => {
+        console.log(`Fetching payments for lease ID: ${leaseId}`);
+        try {
+            // Note: The route was defined as /leases/{lease_id}/payments under the payments blueprint
+            const response = await apiClient.get(`/leases/${leaseId}/payments`);
+            console.log('Get lease payments response:', response.data);
+            return response.data; // Should be List[RentPaymentResponse]
+        } catch (error) {
+            console.error(`Get Lease Payments API error (Lease ID: ${leaseId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to fetch lease payments');
+        }
+    },
+
+    /**
+     * Fetches leases where the current user is the landlord.
+     * @returns {Promise<Array<object>>} - An array of lease objects (LeaseResponse schema).
+     */
+    getMyLeasesAsLandlord: async () => {
+        console.log('Fetching leases where current user is landlord...');
+        try {
+            const response = await apiClient.get('/leases/my-landlord-leases');
+            console.log('Get my landlord leases response:', response.data);
+            return response.data; // Should be List[LeaseResponse]
+        } catch (error) {
+            console.error('Get My Landlord Leases API error:', error.response?.data || error.message);
+            // Return empty array on error? Or let the component handle it?
+            // Let's re-throw for now so component knows about the error.
+            throw new Error(error.response?.data?.message || 'Failed to fetch landlord leases');
+        }
+    }, // End of getMyLeasesAsLandlord
+
+    /**
+     * Fetches leases where the current user is the tenant.
+     * @returns {Promise<Array<object>>} - An array of lease objects (LeaseResponse schema).
+     */
+    getMyLeasesAsTenant: async () => {
+        console.log('Fetching leases where current user is tenant...');
+        try {
+            const response = await apiClient.get('/leases/my-tenant-leases');
+            console.log('Get my tenant leases response:', response.data);
+            return response.data; // Should be List[LeaseResponse]
+        } catch (error) {
+            console.error('Get My Tenant Leases API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to fetch your leases');
+        }
+    }, // End of getMyLeasesAsTenant
+
+    /**
+     * Records a manual rent payment against a lease.
+     * @param {object} paymentData - Data matching RentPaymentCreateManual schema.
+     * @returns {Promise<object>} - The updated/created payment record (RentPaymentResponse schema).
+     */
+    recordManualPayment: async (paymentData) => {
+        console.log('Recording manual payment:', paymentData);
+        try {
+            const response = await apiClient.post('/payments/record-manual', paymentData);
+            console.log('Record manual payment response:', response.data);
+            return response.data; // Should be RentPaymentResponse
+        } catch (error) {
+            console.error('Record Manual Payment API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to record manual payment');
+        }
+    }, // Comma needed before next function definition
+
+
+
+    // --- Maintenance Request Functions ---
+
+    /**
+     * Submits a new maintenance request.
+     * @param {object} requestData - Data matching MaintenanceRequestCreate schema.
+     * @returns {Promise<object>} - The created request data (MaintenanceRequestResponse schema).
+     */
+    submitMaintenanceRequest: async (requestData) => {
+        console.log('Submitting maintenance request:', requestData);
+        try {
+            const response = await apiClient.post('/maintenance/requests', requestData);
+            console.log('Submit maintenance request response:', response.data);
+            return response.data; // Should be MaintenanceRequestResponse
+        } catch (error) {
+            console.error('Submit Maintenance Request API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to submit maintenance request');
+        }
+    },
+
+    /**
+     * Fetches maintenance requests submitted by the current user.
+     * @returns {Promise<Array<object>>} - An array of request objects (MaintenanceRequestResponse schema).
+     */
+    getMySubmittedMaintenanceRequests: async () => {
+        console.log('Fetching submitted maintenance requests...');
+        try {
+            const response = await apiClient.get('/maintenance/requests/my-submitted');
+            console.log('Get submitted requests response:', response.data);
+            return response.data; // Should be List[MaintenanceRequestResponse]
+        } catch (error) {
+            console.error('Get Submitted Maintenance Requests API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to fetch your maintenance requests');
+        }
+    },
+
+    /**
+     * Updates the status or notes of a maintenance request.
+     * @param {string} requestId - The UUID of the request to update.
+     * @param {object} updateData - Data matching MaintenanceRequestUpdate schema ({ status?, resolution_notes? }).
+     * @returns {Promise<object>} - The updated request data (MaintenanceRequestResponse schema).
+     */
+    updateMaintenanceRequestStatus: async (requestId, updateData) => {
+        console.log(`Updating maintenance request ${requestId} with:`, updateData);
+        try {
+            const response = await apiClient.put(`/maintenance/requests/${requestId}`, updateData);
+            console.log('Update maintenance request response:', response.data);
+            return response.data; // Should be MaintenanceRequestResponse
+        } catch (error) {
+            console.error(`Update Maintenance Request API error (ID: ${requestId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to update maintenance request');
+        }
+    },
+
+
+    /**
+     * Updates the status or notes of a maintenance request.
+     * @param {string} requestId - The UUID of the request to update.
+     * @param {object} updateData - Data matching MaintenanceRequestUpdate schema ({ status?, resolution_notes? }).
+     * @returns {Promise<object>} - The updated request data (MaintenanceRequestResponse schema).
+     */
+    updateMaintenanceRequestStatus: async (requestId, updateData) => {
+        console.log(`Updating maintenance request ${requestId} with:`, updateData);
+        try {
+            const response = await apiClient.put(`/maintenance/requests/${requestId}`, updateData);
+            console.log('Update maintenance request response:', response.data);
+            return response.data; // Should be MaintenanceRequestResponse
+        } catch (error) {
+            console.error(`Update Maintenance Request API error (ID: ${requestId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to update maintenance request');
+        }
+    },
+
+
+    /**
+     * Fetches maintenance requests assigned to the current user (landlord/agent).
+     * @returns {Promise<Array<object>>} - An array of request objects (MaintenanceRequestResponse schema).
+     */
+    getMyAssignedMaintenanceRequests: async () => {
+        console.log('Fetching assigned maintenance requests...');
+        try {
+            const response = await apiClient.get('/maintenance/requests/my-assigned');
+            console.log('Get assigned requests response:', response.data);
+            return response.data; // Should be List[MaintenanceRequestResponse]
+        } catch (error) {
+            console.error('Get Assigned Maintenance Requests API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to fetch assigned maintenance requests');
+        }
+    },
+
+
+    // TODO: Add getRequestsForProperty, getRequestsAssignedToLandlord, updateRequestStatus etc.
+
+    // TODO: Add getLeaseDetails, updateLease, deleteLease etc.
+
+}; // Close the apiService object definition
 
 export default apiService;

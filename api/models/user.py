@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, List, Optional
 # Import models for type checking only to avoid circular imports
 if TYPE_CHECKING:
     from .favorite import Favorite  # Import for relationship type hint
+    from .lease import Lease  # Add Lease import
     from .property import Property
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import Boolean, Integer, String, Text, func  # Add Text
@@ -89,6 +90,19 @@ class User(Base):
     # sent_messages: Mapped[List["ChatMessage"]] = relationship("ChatMessage", foreign_keys="[ChatMessage.sender_id]", back_populates="sender")
     # received_messages: Mapped[List["ChatMessage"]] = relationship("ChatMessage", foreign_keys="[ChatMessage.receiver_id]", back_populates="receiver")
     # involved_chats: Mapped[List["Chat"]] = relationship("Chat", secondary="chat_participants", back_populates="participants")
+    # Relationships to Leases
+    leases_as_tenant: Mapped[List["Lease"]] = relationship(
+        "Lease",
+        foreign_keys="[Lease.tenant_id]",
+        back_populates="tenant",
+        lazy="selectin",
+    )
+    leases_as_landlord: Mapped[List["Lease"]] = relationship(
+        "Lease",
+        foreign_keys="[Lease.landlord_id]",
+        back_populates="landlord",
+        lazy="selectin",
+    )
 
     def __repr__(self):
         return f"User(id={self.id}, email={self.email}, role={self.role})"
@@ -217,6 +231,16 @@ class PaginatedUserResponse(BaseModel):
     page: int
     per_page: int
     total_pages: int
+
+
+# Simplified response for linking
+class UserResponseSimple(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role: UserRole
 
 
 # --- Schemas for User Search ---

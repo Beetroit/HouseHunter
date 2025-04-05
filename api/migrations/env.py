@@ -10,7 +10,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Import your Base model and application configuration
 # Ensure these paths are correct for your project structure
-from models.base import Base  # Adjust if your Base model is elsewhere
+from models import *  # Adjust if your Base model is elsewhere
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -26,6 +26,7 @@ from models.user import UserResponse
 
 if TYPE_CHECKING:
     from models.chat import Chat  # Add Chat import for relationship
+    from models.lease import Lease  # Add Lease import
     from models.user import User
     from models.verification_document import VerificationDocument  # Add this import
 
@@ -201,6 +202,12 @@ class Property(Base):
         lazy="selectin",
         order_by="VerificationDocument.uploaded_at",
     )
+    leases: Mapped[List["Lease"]] = relationship(
+        "Lease",
+        back_populates="property",
+        cascade="all, delete-orphan",  # If a property is deleted, associated leases might be too (consider implications)
+        lazy="selectin",
+    )
 
 
 # --- Pydantic Schemas ---
@@ -291,6 +298,16 @@ class PropertyResponse(PropertyBase):
     lister: UserResponse  # Embed info about the user who listed it
     owner: UserResponse  # Embed info about the actual owner
     images: List[PropertyImageResponse] = []  # Add images list
+
+
+# Simplified response for linking
+class PropertyResponseSimple(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    city: Optional[str] = None
+    address: Optional[str] = None
 
 
 class PaginatedPropertyResponse(BaseModel):

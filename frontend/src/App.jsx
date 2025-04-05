@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next'; // Import the hook
 import { Link, Navigate, Route, Routes } from 'react-router-dom'; // Ensure Navigate is imported
 import './App.css';
 import { useAuth } from './contexts/AuthContext.jsx'; // Ensure useAuth is imported
 
+import LanguageSwitcher from './components/LanguageSwitcher.jsx'; // Import the switcher
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'; // Use .jsx extension
 import ChatPage from './pages/ChatPage.jsx'; // Import the ChatPage
 import ChatsListPage from './pages/ChatsListPage.jsx'; // Import the new page component
@@ -22,7 +24,10 @@ import UserProfilePage from './pages/UserProfilePage.jsx';
 // Remove placeholder HomePage definition
 // Remove placeholder DashboardPage definition
 // Remove placeholder ListingDetailPage
-const NotFoundPage = () => <h2>404 - Page Not Found</h2>;
+const NotFoundPage = () => {
+    const { t } = useTranslation();
+    return <h2>{t('error.notFound')}</h2>;
+};
 
 // Simple Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -58,36 +63,39 @@ const AgentOrAdminRoute = ({ children }) => {
 function App() {
     // This line should already be present from previous attempt, ensure it is.
     const { currentUser, logout } = useAuth();
+    const { t } = useTranslation(); // Get the translation function
     // Basic layout with navigation and routing
     return (
         <div className="App">
             <nav>
                 <ul>
-                    <li><Link to="/">Home</Link></li>
+                    <li><Link to="/">{t('nav.home')}</Link></li>
                     {currentUser ? (
                         <>
-                            <li><Link to="/dashboard">Dashboard</Link></li>
+                            <li><Link to="/dashboard">{t('nav.dashboard')}</Link></li>
                             {/* Add Chats link */}
-                            <li><Link to="/chats">My Chats</Link></li>
+                            <li><Link to="/chats">{t('nav.myChats')}</Link></li>
                             {/* Add Admin Dashboard link if user is admin */}
-                            {currentUser.role === 'admin' && <li><Link to="/admin/dashboard">Admin Dashboard</Link></li>}
+                            {currentUser.role === 'admin' && <li><Link to="/admin/dashboard">{t('nav.adminDashboard')}</Link></li>}
                             {/* Show Create Listing link only to agents or admins */}
                             {(currentUser.role === 'agent' || currentUser.role === 'admin') && (
-                                <li><Link to="/create-listing">Create Listing</Link></li>
+                                <li><Link to="/create-listing">{t('nav.createListing')}</Link></li>
                             )}
-                            <li><Link to="/favorites">My Favorites</Link></li> {/* Link to Favorites page */}
-                            <li><Link to="/profile/edit">Edit Profile</Link></li> {/* Link to edit profile */}
-                            <li><button onClick={logout}>Logout</button></li>
+                            <li><Link to="/favorites">{t('nav.myFavorites')}</Link></li> {/* Link to Favorites page */}
+                            <li><Link to="/profile/edit">{t('nav.editProfile')}</Link></li> {/* Link to edit profile */}
+                            <li><button onClick={logout}>{t('nav.logout')}</button></li>
                             {/* Display user email or name if available */}
                             {currentUser.email && <li style={{ color: 'white', marginLeft: 'auto', marginRight: '1rem' }}><Link to={`/profile/${currentUser.id}`} style={{ color: 'white', textDecoration: 'none' }}>{currentUser.email}</Link></li>} {/* Link to own profile */}
                         </>
                     ) : (
                         <>
-                            <li><Link to="/login">Login</Link></li>
-                            <li><Link to="/register">Register</Link></li>
+                            <li><Link to="/login">{t('nav.login')}</Link></li>
+                            <li><Link to="/register">{t('nav.register')}</Link></li>
                         </>
                     )}
                     {/* Remove the static dashboard link */}
+                    {/* Language Switcher - Placed here to appear at the end */}
+                    <li><LanguageSwitcher /></li>
                 </ul>
             </nav>
 
@@ -119,7 +127,7 @@ function App() {
             </main>
 
             <footer>
-                <p>&copy; {new Date().getFullYear()} HouseHunter</p>
+                <p>&copy; {new Date().getFullYear()} {t('footer.brand')}</p>
             </footer>
         </div>
     );

@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom'; // Import BrowserRouter
 import App from './App'; // The main App component
 import { AuthProvider } from './contexts/AuthContext.jsx'; // Use .jsx extension
+import './i18n'; // Import i18next configuration
 import './index.css';
-// import reportWebVitals from './reportWebVitals'; // Removed CRA specific file
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

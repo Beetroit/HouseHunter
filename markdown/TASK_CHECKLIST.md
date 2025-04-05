@@ -72,10 +72,13 @@
         * *Summary (2025-04-03/04):* Component created, route added. Image upload UI/API implemented.
     * [X] `apiService.jsx` Updates: `getMyProperties`, `updateProperty`, `deleteProperty` functions added.
         * *Summary (2025-04-03):* Functions added.
-- [ ] **Frontend Localization:**
-    * [ ] Implement i18n library (e.g., `i18next`) for UI text.
-    * [ ] Create initial English/French translation files for core UI elements (nav, buttons, forms).
-    * [ ] Add language switcher component.
+- [X] **Frontend Localization:** Basic setup implemented.
+    * [X] Implement i18n library (e.g., `i18next`) for UI text.
+        * *Summary (2025-04-05):* Installed `i18next`, `react-i18next`, `i18next-browser-languagedetector`. Created `frontend/src/i18n.js` config file and imported into `main.jsx`.
+    * [X] Create initial English/French translation files for core UI elements (nav, buttons, forms).
+        * *Summary (2025-04-05):* Added translation keys and initial EN/FR strings for navigation/footer elements to `i18n.js`. Integrated `useTranslation` hook into `App.jsx` for these elements.
+    * [X] Add language switcher component.
+        * *Summary (2025-04-05):* Created `frontend/src/components/LanguageSwitcher.jsx` and added it to the navigation bar in `App.jsx`.
 
 ## Phase 3: Verification & Trust Building
 

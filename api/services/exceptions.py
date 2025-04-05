@@ -123,3 +123,10 @@ class FavoriteNotFoundException(ServiceException):
         self, message: str = "Favorite not found", status_code: int = 404
     ):  # 404 Not Found
         super().__init__(message, status_code)
+
+
+class DocumentNotFoundException(ServiceException):
+    """Raised when a document is not found."""
+
+    def __init__(self, message: str = "Document not found", status_code: int = 404):
+        super().__init__(message, status_code)

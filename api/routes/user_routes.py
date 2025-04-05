@@ -1,23 +1,41 @@
 import uuid
+from typing import Optional  # Import List
 
-from models.user import PublicUserResponse, UpdateUserRequest, UserResponse
+# Import UserRole and PaginatedUserResponse if not already present
+from models.user import (
+    PaginatedUserResponse,
+    PublicUserResponse,
+    UpdateUserRequest,
+    UserResponse,
+    UserRole,
+)
+from pydantic import BaseModel, Field  # Import BaseModel and Field
 from quart import Blueprint, current_app
 from quart_auth import login_required
-from quart_schema import tag, validate_request, validate_response
+
+# Import validate_querystring
+from quart_schema import tag, validate_querystring, validate_request, validate_response
 from services.database import get_session
 from services.exceptions import (
     EmailAlreadyExistsException,
     UnauthorizedException,
-    UserNotFoundException,
+    UserNotFoundException,  # Import InvalidRequestException
 )
-from services.user_service import UserService  # Re-add UserService import
-from utils.auth_helpers import get_current_user_object  # Import shared helper
+from services.user_service import UserService
+from utils.auth_helpers import get_current_user_object
+from utils.decorators import admin_required  # Import admin_required
 
 # Define the Blueprint
-bp = Blueprint("user", __name__)  # Removed url_prefix
+bp = Blueprint("user", __name__)
 
 
-# Removed local helper function definition, using shared one from api.utils.auth_helpers
+# --- Query Parameter Schemas ---
+class ListUsersQueryArgs(BaseModel):
+    page: int = Field(default=1, ge=1)
+    per_page: int = Field(default=10, ge=1, le=100)
+    role: Optional[UserRole] = Field(None, description="Filter users by role")
+
+
 # --- Routes ---
 
 
@@ -27,10 +45,7 @@ bp = Blueprint("user", __name__)  # Removed url_prefix
 @tag(["User"])
 async def get_me():
     """Get the profile details of the currently authenticated user."""
-    # The login_required decorator ensures current_user exists.
-    # We fetch the full object to ensure all data is available for UserResponse.
     user = await get_current_user_object()
-    # Pydantic model validation handles conversion from ORM object
     return user, 200
 
 
@@ -42,14 +57,11 @@ async def get_me():
 async def update_me(data: UpdateUserRequest):
     """Update the profile details of the currently authenticated user."""
     requesting_user = await get_current_user_object()
-    user_id_to_update = (
-        requesting_user.id
-    )  # User can only update themselves via this route
+    user_id_to_update = requesting_user.id
 
     async with get_session() as db_session:
         user_service = UserService(db_session)
         try:
-            # Pass requesting_user for authorization checks within the service
             updated_user = await user_service.update_user(
                 user_id=user_id_to_update,
                 update_data=data,
@@ -63,7 +75,6 @@ async def update_me(data: UpdateUserRequest):
             EmailAlreadyExistsException,
             UnauthorizedException,
         ) as e:
-            # Let global handler manage these specific errors
             await db_session.rollback()
             raise e
         except Exception as e:
@@ -84,13 +95,46 @@ async def get_user_profile(user_id: uuid.UUID):
         user_service = UserService(db_session)
         try:
             user = await user_service.get_public_user_profile(user_id)
-            # Pydantic model validation handles conversion and field selection
             return user, 200
         except UserNotFoundException as e:
-            # Let global handler manage this
             raise e
         except Exception as e:
             current_app.logger.error(
                 f"Error fetching profile for user {user_id}: {e}", exc_info=True
             )
             raise ValueError("Failed to fetch user profile due to an unexpected error.")
+
+
+# --- Admin User Routes ---
+
+
+@bp.route("/", methods=["GET"])  # Changed path to root of user blueprint
+@admin_required  # Only admins can list users
+@validate_querystring(ListUsersQueryArgs)
+@validate_response(PaginatedUserResponse)  # Assuming PaginatedUserResponse exists
+@tag(["User", "Admin"])
+async def list_users(query_args: ListUsersQueryArgs):
+    """List users with pagination and optional role filter (Admin only)."""
+    async with get_session() as db_session:
+        user_service = UserService(db_session)
+        # This requires a new method in UserService: list_users(page, per_page, role_filter)
+        # Let's assume it exists for now.
+        try:
+            # Call the service method to list users
+            users, total_items, total_pages = await user_service.list_users(
+                page=query_args.page,
+                per_page=query_args.per_page,
+                role_filter=query_args.role,
+            )
+
+            user_responses = [UserResponse.model_validate(user) for user in users]
+            return PaginatedUserResponse(
+                items=user_responses,
+                total=total_items,
+                page=query_args.page,
+                per_page=query_args.per_page,
+                total_pages=total_pages,
+            )
+        except Exception as e:
+            current_app.logger.error(f"Error listing users: {e}", exc_info=True)
+            raise ValueError("Failed to list users due to an unexpected error.")

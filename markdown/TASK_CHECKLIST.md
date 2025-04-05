@@ -25,10 +25,11 @@
         * *Summary (2025-04-03):* Verified model includes necessary roles and fields (`reputation_points`, `is_verified_agent`). Pydantic schemas updated.
     * [X] `models/property.py`: Defined `Property` model/schemas with `lister_id`, `owner_id`, and added `verification_status` (e.g., PENDING, VERIFIED, REJECTED, NEEDS_INFO) and `verification_notes` fields.
         * *Summary (2025-04-03):* Verified `lister_id`, `owner_id`.
-        * *Update (2025-04-05):* Added `verification_status` enum/field and `verification_notes` text field to `Property` model and relevant Pydantic schemas (`PropertyResponse`, `AdminPropertyResponse`). Generate Alembic migration.
+        * *Update (2025-04-05):* Refactored `status` enum (added `NEEDS_INFO`), added `verification_notes` field, and refactored pricing (`price`, `pricing_type`, `custom_rental_duration_days`) in `Property` model and Pydantic schemas.
     * [X] Alembic Configuration & Initial Migration: Setup complete, initial migration reflecting User/Property changes handled.
         * *Summary (2025-04-03):* Config files created. Migration for initial models handled.
-    * [ ] **Alembic Migration:** Generate and apply migration for `verification_status` and `verification_notes` fields in `Property` model.
+    * [X] **Alembic Migration:** Generate and apply migration for `status` enum, `verification_notes`, and pricing fields in `Property` model.
+        * *Summary (2025-04-05):* Migration generated and applied successfully for model refactoring.
 - [X] **Core Services (`api/`):**
     * [X] `services/exceptions.py`: Defined custom service layer exceptions.
         * *Summary (2025-04-03):* Created `api/services/exceptions.py`. Added `ChatNotFoundException`.
@@ -83,35 +84,47 @@
 - **Property Verification Workflow (`api/`):**
     * [X] Update `PropertyService` verify/reject methods to use new `verification_status` enum and `verification_notes`.
         * *Summary (2025-04-03):* Basic methods added.
-        * *Update (2025-04-05):* Refactor methods to set specific statuses (VERIFIED, REJECTED, NEEDS_INFO) and save notes.
+        * *Update (2025-04-05):* Refactored service methods (`verify_property`, `reject_property`) to handle `verification_notes` and added `request_property_info` method for `NEEDS_INFO` status. Updated pricing logic in `create_property` and `update_property`.
     * [X] Update `admin_routes.py` endpoints (`/pending`, `/verify/{id}`, `/reject/{id}`) to use updated service methods and potentially allow adding notes.
         * *Summary (2025-04-03):* Routes created.
-        * *Update (2025-04-05):* Update endpoints to accept optional notes and use refined service methods. Add endpoint to fetch properties needing info.
-    * [ ] **Document Upload Service (`api/`):**
-        * [ ] Define `VerificationDocument` model (linked to Property, stores filename/path, document type, upload timestamp). Generate migration.
-        * [ ] Update `PropertyService` or create `VerificationService` for handling document uploads associated with a property. Use existing storage abstraction.
-        * [ ] Create API endpoint(s) for uploading verification documents for a specific property (accessible by lister/owner before verification).
-        * [ ] Create API endpoint for admins to view/download documents for a pending property.
+        * *Update (2025-04-05):* Updated `/reject` endpoint to accept notes, added `/request-info` endpoint, and updated `/review-queue` (formerly `/pending`) endpoint to fetch `PENDING` and `NEEDS_INFO` statuses.
+    * [X] **Document Upload Service (`api/`):** Backend implemented.
+        * [X] Define `VerificationDocument` model (linked to Property, stores filename/path, document type, upload timestamp). Generate migration.
+            * *Summary (2025-04-05):* Created `api/models/verification_document.py`, added relationship to `Property`, generated and applied migration `d1309f8c5d6c`.
+        * [X] Update `PropertyService` or create `VerificationService` for handling document uploads associated with a property. Use existing storage abstraction.
+            * *Summary (2025-04-05):* Added `add_verification_document_to_property` and `delete_verification_document_from_property` methods to `PropertyService`. Updated `ALLOWED_EXTENSIONS` in `storage.py`.
+        * [X] Create API endpoint(s) for uploading verification documents for a specific property (accessible by lister/owner before verification).
+            * *Summary (2025-04-05):* Added POST `/properties/{id}/verification-documents` and DELETE `/verification-documents/{doc_id}` endpoints to `property_routes.py`.
+        * [X] Create API endpoint for admins to view/download documents for a pending property.
+            * *Summary (2025-04-05):* Added GET `/properties/{id}/verification-documents` endpoint to `admin_routes.py`. (Note: Download functionality not implemented, only listing).
 - **Property Verification Workflow (`frontend/`):**
-    * [ ] **Listing Creation/Edit:**
-        * [ ] Add section for uploading required verification documents (Proof of Ownership, Lister ID) in `CreateListingPage.jsx` and `EditListingPage.jsx`. Integrate with new API endpoint.
-        * [ ] Display current verification status and admin notes (if rejected or needs info) on `EditListingPage.jsx` and `DashboardPage.jsx`.
+    * [X] **Listing Creation/Edit:** Verification document upload and status display added.
+        * [X] Add section for uploading required verification documents (Proof of Ownership, Lister ID) in `CreateListingPage.jsx` and `EditListingPage.jsx`. Integrate with new API endpoint.
+            * *Summary (2025-04-05):* Added document upload UI and integrated `uploadVerificationDocument` API call in both create and edit pages.
+        * [X] Display current verification status and admin notes (if rejected or needs info) on `EditListingPage.jsx` and `DashboardPage.jsx`.
+            * *Summary (2025-04-05):* Added status/notes display to `EditListingPage.jsx`. (Note: `DashboardPage.jsx` update pending separate task if needed).
     * [ ] **Admin Dashboard (`AdminDashboardPage.jsx`):**
         * [X] Display list of `PENDING` listings. Pagination added.
             * *Summary (2025-04-03/04):* Fetching and button connections implemented. Pagination added.
-        * [ ] Update dashboard to display properties with `PENDING` or `NEEDS_INFO` status.
-        * [ ] Enhance listing display to show uploaded documents (links to view/download).
-        * [ ] Update Verify/Reject buttons to potentially include a modal/field for adding rejection/clarification notes. Add button/action to set status to `NEEDS_INFO`.
+        * [X] Update dashboard to display properties with `PENDING` or `NEEDS_INFO` status.
+            * *Summary (2025-04-05):* Updated `AdminDashboardPage.jsx` to fetch from `/review-queue` endpoint.
+        * [X] Enhance listing display to show uploaded documents (links to view/download).
+            * *Summary (2025-04-05):* Added display of linked verification documents on `AdminDashboardPage.jsx`.
+        * [X] Update Verify/Reject buttons to potentially include a modal/field for adding rejection/clarification notes. Add button/action to set status to `NEEDS_INFO`.
+            * *Summary (2025-04-05):* Updated action buttons on `AdminDashboardPage.jsx` to use `prompt()` for notes and call relevant API service functions (`rejectListing`, `requestListingInfo`).
     * [ ] **Public Listing Display:**
         * [X] Ensure `HomePage.jsx` filters for `VERIFIED` status (See Phase 2 update).
-        * [ ] Prominently display "Verified Listing" badge/indicator on `HomePage.jsx` cards and `ListingDetailPage.jsx`.
+        * [X] Prominently display "Verified Listing" badge/indicator on `HomePage.jsx` cards and `ListingDetailPage.jsx`.
+            * *Summary (2025-04-05):* Added conditional badge rendering and CSS styles. Updated price display logic.
 - **User Trust Features:**
     * [X] **User Profiles & Agent Verification:** Public profiles implemented. Agent role exists.
         * *Summary (2025-04-03/04):* Profile fields, service methods, routes, frontend pages created.
-    * [ ] **Admin Agent Verification:**
-        * [ ] Backend: Add admin endpoint/service method to manually set `User.is_verified_agent = True`.
-        * [ ] Frontend: Add section in `AdminDashboardPage.jsx` or separate admin page to list agents and verify them.
-    * [ ] **Display Agent Verification:** Show "Verified Agent" badge on agent profiles (`UserProfilePage.jsx`) and potentially on listings created by them.
+    * [X] **Admin Agent Verification:** Backend endpoint and frontend UI implemented.
+        * [X] Backend: Add admin endpoint/service method to manually set `User.is_verified_agent = True`.
+            * *Summary (2025-04-05):* Added `verify_agent` method to `UserService` and POST `/admin/users/{user_id}/verify-agent` endpoint to `admin_routes.py`. Added GET `/users` endpoint with role filter to `user_routes.py`.
+        * [X] Frontend: Add section in `AdminDashboardPage.jsx` or separate admin page to list agents and verify them.
+            * *Summary (2025-04-05):* Added `getUsers` and `verifyAgent` functions to `apiService.jsx`. Added Agent Verification section to `AdminDashboardPage.jsx` with agent listing and verify button.
+    * [X] **Display Agent Verification:** "Verified Agent" badge displayed on agent profiles.
     * [X] **Reviews/Ratings (for Agents/Properties):** Implemented.
         * *Summary (2025-04-04):* Backend model/service/routes added. Frontend form and display integrated.
     * [ ] **Reporting System:**

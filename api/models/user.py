@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, List, Optional
 
 # Import models for type checking only to avoid circular imports
 if TYPE_CHECKING:
-    from .property import Property
     from .favorite import Favorite  # Import for relationship type hint
+    from .property import Property
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import Boolean, Integer, String, Text, func  # Add Text
 from sqlalchemy import Enum as SQLAlchemyEnum
@@ -208,3 +208,12 @@ class PublicUserResponse(BaseModel):
     # @property
     # def reputation_points(self) -> Optional[int]:
     #     return self.reputation_points if self.role == UserRole.AGENT else None
+
+
+# Response for paginated list of users
+class PaginatedUserResponse(BaseModel):
+    items: List[UserResponse]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int

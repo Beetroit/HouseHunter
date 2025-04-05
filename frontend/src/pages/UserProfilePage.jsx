@@ -208,7 +208,7 @@ function UserProfilePage() {
             {/* Agent Specific Info */}
             {(profile.role === 'agent') && (
                 <div className="agent-info" style={{ borderTop: '1px solid var(--glass-border-color)', paddingTop: '1rem', marginTop: '1rem' }}>
-                    <h4>Agent Details</h4>
+                    <h4>Agent Details {profile.is_verified_agent && <span style={{ color: 'green', fontWeight: 'bold', marginLeft: '0.5rem' }}>Verified Agent</span>}</h4>
                     <p>Verified Agent: {profile.is_verified_agent ? 'Yes' : 'No'}</p>
                     <p>Reputation Points: {profile.reputation_points ?? 0}</p>
                 </div>

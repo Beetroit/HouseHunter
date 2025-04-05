@@ -93,13 +93,28 @@ function ListingDetailPage() {
     }
 
     // Format details for display
-    const formatPrice = (price) => price ? `$${Number(price).toFixed(2)}/month` : 'N/A';
+    // Helper to format enum values for display
+    const formatEnumValue = (value) => {
+        return value ? value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A';
+    };
+    const formatPrice = (price, pricingType) => {
+        if (price === null || price === undefined) return 'N/A';
+        const formattedPrice = Number(price).toLocaleString(); // Format number with commas
+        const typeString = formatEnumValue(pricingType).replace('Rental ', ''); // Make it shorter
+        return `${formattedPrice} (${typeString})`;
+    };
     const formatSqFt = (sqft) => sqft ? `${sqft} sq ft` : 'N/A';
     const formatBedsBaths = (count) => count !== null && count !== undefined ? count : 'N/A';
 
     return (
         <div className="listing-detail-container">
-            <h2>{listing.title}</h2>
+            <h2 style={{ position: 'relative' }}>
+                {listing.title}
+                {/* Verified Badge */}
+                {listing.status === 'verified' && (
+                    <span className="verified-badge" style={{ fontSize: '0.8rem', marginLeft: '10px', verticalAlign: 'middle' }}>Verified</span>
+                )}
+            </h2>
 
             {/* Favorite Button - Show only if logged in */}
             {currentUser && (
@@ -133,11 +148,11 @@ function ListingDetailPage() {
 
             {/* Image display handled above */}
             <p><strong>Type:</strong> {listing.property_type}</p>
-            <p><strong>Status:</strong> {listing.status}</p>
+            <p><strong>Status:</strong> {formatEnumValue(listing.status)}</p>
             <p><strong>Description:</strong> {listing.description || 'No description provided.'}</p>
             <p><strong>Address:</strong> {listing.address || 'N/A'}</p>
             <p><strong>Location:</strong> {`${listing.city || 'N/A'}, ${listing.state || 'N/A'}, ${listing.country || 'N/A'}`}</p>
-            <p><strong>Price:</strong> {formatPrice(listing.price_per_month)}</p>
+            <p><strong>Price:</strong> {formatPrice(listing.price, listing.pricing_type)}</p>
             <p><strong>Bedrooms:</strong> {formatBedsBaths(listing.bedrooms)}</p>
             <p><strong>Bathrooms:</strong> {formatBedsBaths(listing.bathrooms)}</p>
             <p><strong>Area:</strong> {formatSqFt(listing.square_feet)}</p>

@@ -130,6 +130,25 @@
 }
 
 
+
+/* Verified Badge Style */
+.verified-badge {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    background-color: var(--success-color, #28a745);
+    /* Use success color variable or fallback */
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 1;
+    /* Ensure it's above the image */
+}
+
 /* Styles for Listing Detail Page */
 .listing-detail-container {
     max-width: 900px;

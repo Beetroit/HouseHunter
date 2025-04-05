@@ -1,14 +1,16 @@
 import uuid
-from typing import Optional
+from math import ceil
+from typing import List, Optional, Tuple
 
 from models.user import CreateUserRequest, UpdateUserRequest, User, UserRole
 from passlib.context import CryptContext
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.exceptions import (
     EmailAlreadyExistsException,
+    InvalidRequestException,  # Add this import
     UnauthorizedException,
     UserNotFoundException,
 )
@@ -170,3 +172,56 @@ class UserService:
         # The route handler will be responsible for converting this User object
         # to the PublicUserResponse schema before sending it to the client.
         return user
+
+    async def list_users(
+        self,
+        page: int = 1,
+        per_page: int = 10,
+        role_filter: Optional[UserRole] = None,
+    ) -> Tuple[List[User], int, int]:
+        """List users with pagination and optional role filtering."""
+        base_query = select(User)
+        if role_filter:
+            base_query = base_query.where(User.role == role_filter)
+
+        # Get total count for pagination
+        count_query = select(func.count()).select_from(base_query.subquery())
+        total_result = await self.session.execute(count_query)
+        total_items = total_result.scalar_one()
+
+        total_pages = ceil(total_items / per_page) if per_page > 0 else 0
+
+        # Get the users for the current page
+        offset = (page - 1) * per_page
+        items_query = (
+            base_query.order_by(User.created_at.desc()).offset(offset).limit(per_page)
+        )
+        items_result = await self.session.execute(items_query)
+        users = list(items_result.scalars().all())
+
+        return users, total_items, total_pages
+
+    async def verify_agent(self, user_id: uuid.UUID) -> User:
+        """Mark a user with the AGENT role as verified."""
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            raise UserNotFoundException(f"User with ID {user_id} not found.")
+
+        if user.role != UserRole.AGENT:
+            raise InvalidRequestException(
+                f"User {user_id} is not an agent and cannot be verified as such."
+            )
+
+        if user.is_verified_agent:
+            # Optionally log or just return the user if already verified
+            print(f"Agent {user_id} is already verified.")
+            return user
+
+        user.is_verified_agent = True
+        try:
+            await self.session.flush()
+            await self.session.refresh(user)
+            return user
+        except Exception as e:
+            await self.session.rollback()
+            raise ValueError(f"Could not verify agent {user_id}: {e}") from e

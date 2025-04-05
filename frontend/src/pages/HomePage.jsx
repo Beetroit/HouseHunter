@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiService from '../services/apiService.jsx';
-import './ListingStyles.css'; // Create a CSS file for listing display
+import './ListingStyles.css'; // Styles for listings, including the badge
 
 function HomePage() {
     const [listings, setListings] = useState([]);
@@ -41,6 +41,10 @@ function HomePage() {
                 <div className="listings-container">
                     {listings.map(listing => (
                         <div key={listing.id} className="listing-card">
+                            {/* Verified Badge */}
+                            {listing.status === 'verified' && (
+                                <span className="verified-badge">Verified</span>
+                            )}
                             {/* Basic listing card structure */}
                             {/* Display first image if available */}
                             <div className="listing-card-image-container">
@@ -53,7 +57,7 @@ function HomePage() {
                             <h3>{listing.title}</h3>
                             <p><strong>Type:</strong> {listing.property_type}</p>
                             <p><strong>Location:</strong> {listing.city ? `${listing.city}, ${listing.state || ''}` : 'N/A'}</p>
-                            <p><strong>Price:</strong> {listing.price_per_month ? `$${listing.price_per_month.toFixed(2)}/month` : 'N/A'}</p>
+                            <p><strong>Price:</strong> {listing.price ? `${listing.price.toLocaleString()} (${listing.pricing_type.replace('rental_', '').replace('_', ' ')})` : 'N/A'}</p>
                             <Link to={`/listings/${listing.id}`}>View Details</Link>
                         </div>
                     ))}

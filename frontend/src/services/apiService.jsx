@@ -152,17 +152,18 @@ const apiService = {
     // --- Admin API Calls ---
 
     /**
-     * Fetches a paginated list of pending properties (admin only).
+     * Fetches a paginated list of properties needing review (PENDING or NEEDS_INFO) (admin only).
      * @param {object} params - Query parameters (e.g., { page: 1, per_page: 10 }).
      * @returns {Promise<object>} - Paginated property data (PaginatedPropertyResponse schema).
      */
-    getPendingListings: async (params) => {
+    getReviewQueueListings: async (params) => { // Renamed function
         try {
-            const response = await apiClient.get('/admin/properties/pending', { params });
+            // Updated endpoint to match backend route
+            const response = await apiClient.get('/admin/properties/review-queue', { params });
             return response.data;
         } catch (error) {
-            console.error('Get Pending Listings API error:', error.response?.data || error.message);
-            throw new Error(error.response?.data?.detail || 'Failed to fetch pending listings');
+            console.error('Get Review Queue Listings API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to fetch review queue listings');
         }
     },
 
@@ -184,17 +185,52 @@ const apiService = {
     /**
      * Rejects a property listing (admin only).
      * @param {string} propertyId - The UUID of the property to reject.
+     * @param {string} [notes] - Optional rejection notes.
      * @returns {Promise<object>} - The rejected property data (PropertyResponse schema).
      */
-    rejectListing: async (propertyId) => {
+    rejectListing: async (propertyId, notes) => { // Added notes parameter
         try {
-            const response = await apiClient.post(`/admin/properties/${propertyId}/reject`);
+            const payload = notes ? { notes } : {}; // Send notes if provided
+            const response = await apiClient.post(`/admin/properties/${propertyId}/reject`, payload);
             return response.data;
         } catch (error) {
             console.error(`Reject Listing API error (ID: ${propertyId}):`, error.response?.data || error.message);
             throw new Error(error.response?.data?.detail || 'Failed to reject listing');
         }
     },
+
+    /**
+     * Marks a property as needing more information (admin only).
+     * @param {string} propertyId - The UUID of the property.
+     * @param {string} notes - Required notes specifying the needed information.
+     * @returns {Promise<object>} - The updated property data (PropertyResponse schema).
+     */
+    requestListingInfo: async (propertyId, notes) => {
+        try {
+            const payload = { notes }; // Notes are required for this endpoint
+            const response = await apiClient.post(`/admin/properties/${propertyId}/request-info`, payload);
+            return response.data;
+        } catch (error) {
+            console.error(`Request Listing Info API error (ID: ${propertyId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to request more info for listing');
+        }
+    },
+
+    /**
+     * Verifies an agent user (admin only).
+     * @param {string} userId - The UUID of the agent user to verify.
+     * @returns {Promise<object>} - The updated user data (UserResponse schema).
+     */
+    verifyAgent: async (userId) => {
+        try {
+            const response = await apiClient.post(`/admin/users/${userId}/verify-agent`);
+            return response.data;
+        } catch (error) {
+            console.error(`Verify Agent API error (ID: ${userId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to verify agent');
+        }
+    },
+
     /**
      * Updates a specific property owned by the current user.
      * @param {string} propertyId - The UUID of the property to update.
@@ -336,6 +372,25 @@ const apiService = {
         }
     },
 
+    /**
+     * Fetches a paginated list of users (admin only).
+     * @param {object} params - Query parameters (e.g., { page: 1, per_page: 10, role: 'agent' }).
+     * @returns {Promise<object>} - Paginated user data (PaginatedUserResponse schema).
+     */
+    getUsers: async (params) => {
+        console.log('Fetching users with params:', params);
+        try {
+            // Assuming the endpoint is /users and requires admin
+            const response = await apiClient.get('/users', { params });
+            console.log('Get users response:', response.data);
+            return response.data; // Should be PaginatedUserResponse
+        } catch (error) {
+            console.error('Get Users API error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to fetch users');
+        }
+    },
+
+
     // --- Image API Calls ---
 
     /**
@@ -461,6 +516,55 @@ const apiService = {
         } catch (error) {
             console.error("Error fetching favorites:", error.response?.data || error.message);
             throw error.response?.data || error;
+        }
+    },
+
+    // --- Verification Document Functions ---
+
+    /**
+     * Uploads a verification document for a specific property.
+     * @param {string} propertyId - The UUID of the property.
+     * @param {File} file - The document file object.
+     * @param {string} documentType - The type of document (e.g., 'proof_of_ownership').
+     * @param {string} [description] - Optional description for the document.
+     * @returns {Promise<object>} - The created VerificationDocument data.
+     */
+    uploadVerificationDocument: async (propertyId, file, documentType, description) => {
+        const formData = new FormData();
+        formData.append('document', file); // Key 'document' must match backend expectation
+        formData.append('document_type', documentType);
+        if (description) {
+            formData.append('description', description);
+        }
+
+        console.log(`Uploading verification document (${documentType}) for property ${propertyId}`);
+        try {
+            const response = await apiClient.post(`/properties/${propertyId}/verification-documents`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data', // Important for file uploads
+                },
+            });
+            console.log('Upload verification document response:', response.data);
+            return response.data; // Should be VerificationDocumentResponse
+        } catch (error) {
+            console.error(`Upload Verification Document API error (Property ID: ${propertyId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to upload verification document');
+        }
+    },
+
+    /**
+     * Deletes a specific verification document.
+     * @param {string} documentId - The UUID of the verification document record to delete.
+     * @returns {Promise<void>} - Resolves on success (204), throws on error.
+     */
+    deleteVerificationDocument: async (documentId) => {
+        console.log(`Deleting verification document ID: ${documentId}`);
+        try {
+            await apiClient.delete(`/properties/verification-documents/${documentId}`); // Corrected endpoint
+            console.log(`Verification document ${documentId} deleted successfully.`);
+        } catch (error) {
+            console.error(`Delete Verification Document API error (Document ID: ${documentId}):`, error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Failed to delete verification document');
         }
     },
 

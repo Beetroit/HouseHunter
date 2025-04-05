@@ -27,6 +27,7 @@ from models.user import UserResponse
 if TYPE_CHECKING:
     from models.chat import Chat  # Add Chat import for relationship
     from models.user import User
+    from models.verification_document import VerificationDocument  # Add this import
 
 
 # --- Enums ---
@@ -42,8 +43,17 @@ class PropertyStatus(str, Enum):
     PENDING = "pending"  # Submitted, awaiting admin verification
     VERIFIED = "verified"  # Approved by admin, visible to public
     REJECTED = "rejected"  # Rejected by admin
+    NEEDS_INFO = "needs_info"  # Admin requested more info
     RENTED = "rented"  # Currently rented out
     UNLISTED = "unlisted"  # Temporarily hidden by owner
+
+
+class PricingType(str, Enum):
+    FOR_SALE = "for_sale"
+    RENTAL_MONTHLY = "rental_monthly"
+    RENTAL_WEEKLY = "rental_weekly"
+    RENTAL_DAILY = "rental_daily"
+    RENTAL_CUSTOM = "rental_custom"  # Requires custom_rental_duration_days
 
 
 # --- SQLAlchemy Models ---
@@ -94,12 +104,12 @@ class Property(Base):
         ForeignKey("users.id", name="fk_properties_lister_id_users"),
         index=True,
         nullable=False,
-    )  # Renamed from owner_id
+    )  # User who listed it (Agent/Admin)
     owner_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", name="fk_properties_owner_id_users"),
         index=True,
         nullable=False,
-    )  # New field for actual owner
+    )  # Actual property owner
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
     property_type: Mapped[PropertyType] = mapped_column(
@@ -119,9 +129,17 @@ class Property(Base):
     latitude: Mapped[Optional[float]] = mapped_column(Float)
     longitude: Mapped[Optional[float]] = mapped_column(Float)
 
-    price_per_month: Mapped[Optional[float]] = mapped_column(
+    # New Pricing Structure
+    price: Mapped[Optional[float]] = mapped_column(
         Float, index=True
-    )  # Assuming monthly rent
+    )  # Sale price or rent amount
+    pricing_type: Mapped[PricingType] = mapped_column(
+        SQLAlchemyEnum(PricingType), nullable=False, index=True
+    )  # Mandatory
+    custom_rental_duration_days: Mapped[Optional[int]] = mapped_column(
+        Integer
+    )  # Required if pricing_type is RENTAL_CUSTOM
+
     bedrooms: Mapped[Optional[int]] = mapped_column(Integer)
     bathrooms: Mapped[Optional[int]] = mapped_column(Integer)
     square_feet: Mapped[Optional[int]] = mapped_column(Integer)
@@ -150,19 +168,22 @@ class Property(Base):
         DateTime(timezone=True)
     )  # Use timezone aware
 
+    # Verification Notes
+    verification_notes: Mapped[Optional[str]] = mapped_column(Text)
+
     # Relationships
     lister: Mapped["User"] = relationship(
         "User",
         foreign_keys=[lister_id],
         back_populates="listed_properties",
         lazy="selectin",
-    )  # type: ignore[name-defined] # Renamed relationship
+    )  # type: ignore[name-defined]
     owner: Mapped["User"] = relationship(
         "User",
         foreign_keys=[owner_id],
         back_populates="owned_properties",
         lazy="selectin",
-    )  # type: ignore[name-defined] # New relationship for owner
+    )  # type: ignore[name-defined]
     images: Mapped[List["PropertyImage"]] = relationship(
         "PropertyImage",
         back_populates="property",
@@ -173,6 +194,13 @@ class Property(Base):
     chats: Mapped[List["Chat"]] = relationship(
         "Chat", back_populates="property", lazy="selectin"
     )  # type: ignore[name-defined]
+    verification_documents: Mapped[List["VerificationDocument"]] = relationship(
+        "VerificationDocument",
+        back_populates="property",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="VerificationDocument.uploaded_at",
+    )
 
 
 # --- Pydantic Schemas ---
@@ -206,7 +234,15 @@ class PropertyBase(BaseModel):
     country: Optional[str] = Field(None, max_length=100, example="Countryland")
     latitude: Optional[float] = Field(None, example=34.0522)
     longitude: Optional[float] = Field(None, example=-118.2437)
-    price_per_month: Optional[float] = Field(None, gt=0, example=1500.00)
+    price: Optional[float] = Field(
+        None, gt=0, example=500000.00
+    )  # Sale price or rent amount
+    pricing_type: PricingType = Field(
+        ..., example=PricingType.RENTAL_MONTHLY
+    )  # Mandatory
+    custom_rental_duration_days: Optional[int] = Field(
+        None, ge=1, example=90
+    )  # Required if pricing_type is RENTAL_CUSTOM
     bedrooms: Optional[int] = Field(None, ge=0, example=2)
     bathrooms: Optional[int] = Field(None, ge=0, example=1)
     square_feet: Optional[int] = Field(None, ge=0, example=900)
@@ -227,7 +263,9 @@ class UpdatePropertyRequest(BaseModel):
     country: Optional[str] = Field(None, max_length=100)
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-    price_per_month: Optional[float] = Field(None, gt=0)
+    price: Optional[float] = Field(None, gt=0)
+    pricing_type: Optional[PricingType] = None
+    custom_rental_duration_days: Optional[int] = Field(None, ge=1)
     bedrooms: Optional[int] = Field(None, ge=0)
     bathrooms: Optional[int] = Field(None, ge=0)
     square_feet: Optional[int] = Field(None, ge=0)
@@ -249,6 +287,7 @@ class PropertyResponse(PropertyBase):
     created_at: datetime
     updated_at: datetime
     verified_at: Optional[datetime] = None
+    verification_notes: Optional[str] = None  # Added verification notes
     lister: UserResponse  # Embed info about the user who listed it
     owner: UserResponse  # Embed info about the actual owner
     images: List[PropertyImageResponse] = []  # Add images list

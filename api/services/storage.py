@@ -12,7 +12,16 @@ from quart.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 # Define allowed extensions (consider moving to config)
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+ALLOWED_EXTENSIONS = {
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "webp",
+    "pdf",
+    "doc",
+    "docx",
+}  # Added document types
 
 
 def allowed_file(filename: str) -> bool:

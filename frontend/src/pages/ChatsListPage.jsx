@@ -1,12 +1,12 @@
 // frontend/src/pages/ChatsListPage.jsx
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; // Removed useContext
 import { Link } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext.jsx'; // To identify the current user
+import { useAuth } from '../contexts/AuthContext.jsx'; // Import useAuth hook instead
 import apiService from '../services/apiService.jsx';
-import './ChatsListStyles.css'; // Create this CSS file next
+import './ChatsListStyles.css';
 
 function ChatsListPage() {
-    const { currentUser } = useContext(AuthContext);
+    const { currentUser } = useAuth(); // Use the hook to get context value
     const [chats, setChats] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');

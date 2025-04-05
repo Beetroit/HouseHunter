@@ -299,40 +299,6 @@ const apiService = {
         }
     },
 
-    /**
-     * Fetches paginated list of chat sessions for the current user.
-     * @param {object} params - Query parameters (e.g., { page: 1, per_page: 20 }).
-     * @returns {Promise<object>} - Paginated chat session data (PaginatedChatResponse schema).
-     */
-    getMyChatSessions: async (params) => {
-        console.log('Fetching my chat sessions with params:', params);
-        try {
-            const response = await apiClient.get('/chat/my-sessions', { params });
-            console.log('Get my chat sessions response:', response.data);
-            return response.data; // Should be PaginatedChatResponse
-        } catch (error) {
-            console.error('Get My Chat Sessions API error:', error.response?.data || error.message);
-            throw new Error(error.response?.data?.detail || 'Failed to fetch chat sessions');
-        }
-    },
-
-    /**
-     * Initiates a direct chat session with another user or retrieves an existing one.
-     * @param {string} recipientUserId - The UUID of the user to chat with.
-     * @returns {Promise<object>} - The chat session details (ChatResponse schema).
-     */
-    initiateDirectChat: async (recipientUserId) => {
-        console.log(`Initiating direct chat with user ID: ${recipientUserId}`);
-        try {
-            const response = await apiClient.post(`/chat/initiate/direct/${recipientUserId}`);
-            console.log('Initiate direct chat response:', response.data);
-            return response.data; // Should return chat session details including id
-        } catch (error) {
-            console.error(`Initiate Direct Chat API error (Recipient ID: ${recipientUserId}):`, error.response?.data || error.message);
-            throw new Error(error.response?.data?.detail || 'Failed to initiate direct chat');
-        }
-    },
-
     // --- User Profile API Calls ---
 
     /**

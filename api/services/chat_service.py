@@ -224,9 +224,13 @@ class ChatService:
         )
 
         # Count total items
-        count_query = select(func.count(Chat.id)).select_from(
-            base_query.subquery()
-        )  # Count based on Chat ID
+        # Count total items - Apply filter directly
+        count_query = (
+            select(func.count(Chat.id))
+            .select_from(Chat)
+            .where(or_(Chat.initiator_id == user.id, Chat.property_user_id == user.id))
+        )
+        # Old version: count_query = select(func.count(Chat.id)).select_from(base_query.subquery())
         total_result = await self.session.execute(count_query)
         total_items = (
             total_result.scalar_one_or_none() or 0
@@ -301,7 +305,9 @@ class ChatService:
         # Verify user participation first
         chat = await self.get_chat_by_id(
             chat_id, requesting_user
-        )  # Ensures user is participant
+        )  # Ensures user is a participant
+        if not chat:
+            raise ChatNotFoundException(f"Chat with ID {chat_id} not found.")
 
         offset = (page - 1) * per_page
         base_query = (

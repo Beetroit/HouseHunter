@@ -1,15 +1,15 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/apiService';
-import './DashboardPage.css'; // Reuse dashboard styles
-import './ManageLeasesPage.css'; // Reuse lease styles for table/cards
+import './AdminDashboard.css'; // Reuse AdminDashboard styles
+// import './ManageLeasesPage.css'; // No longer needed, using AdminDashboard.css
 
 function MaintenanceDashboardPage() {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const { user } = useContext(AuthContext);
+    const { user } = useAuth();
 
     const fetchAssignedRequests = useCallback(async () => {
         if (!user) {

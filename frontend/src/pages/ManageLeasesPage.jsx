@@ -1,16 +1,16 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'; // Import useCallback
 import { Link } from 'react-router-dom'; // Import Link
 import RecordPaymentModal from '../components/RecordPaymentModal.jsx'; // Import the modal
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/apiService';
-import './DashboardPage.css'; // Reuse dashboard styles for now
+import './AdminDashboard.css'; // Reuse AdminDashboard styles for now
 import './ManageLeasesPage.css'; // Add specific styles if needed
 
 function ManageLeasesPage() {
     const [leases, setLeases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const { user } = useContext(AuthContext);
+    const { user } = useAuth();
 
     // State for managing payment details display
     const [selectedLeaseId, setSelectedLeaseId] = useState(null); // ID of the lease whose payments are shown

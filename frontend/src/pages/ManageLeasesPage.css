@@ -1,0 +1,46 @@
+/* Add specific styles for ManageLeasesPage here if needed */
+/* For now, it inherits styles from AdminDashboard.css */
+
+.payment-details-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.payment-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.payment-table th,
+.payment-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.payment-table th {
+    background-color: #f2f2f2;
+}
+
+.lease-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    /* Add space between buttons */
+}
+
+/* Add specific styles for maintenance card if needed */
+.maintenance-card {
+    /* Example: Add slightly different padding or border */
+    /* padding: 18px; */
+}
+
+.maintenance-actions {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    /* Align label and select */
+}

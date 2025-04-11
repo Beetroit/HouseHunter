@@ -4,6 +4,7 @@ version = "1"
 description = "Backend for HouseHunter project"
 authors = ["Daniel Obiorah <Beetroit3266@gmail.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"

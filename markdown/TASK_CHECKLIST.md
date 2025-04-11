@@ -1,4 +1,4 @@
-# HouseHunter Platform - Task Checklist (Revised 2025-04-05 - Cameroon Focus)
+# HouseHunter Platform - Task Checklist (Revised 2025-04-11 - Cameroon Focus)
 
 **Instructions for Future Agents:** Please maintain this checklist format. When a task is completed, mark it with `[x]`, add a brief summary of the work done below it, and update the date. Focus priorities are **Verified Listings** and **Core Property Management Tools** for the Cameroon market. **Important:** Before using exceptions or imports, always verify they exist in the relevant files (`api/services/exceptions.py` for exceptions, respective modules for imports). Do not assume existence. Define exceptions before use. Refactor user fetching in routes to use `get_current_user_object` helper.
 
@@ -40,7 +40,9 @@
     * [X] `routes/auth_routes.py`: Implemented registration, login, logout, get current user endpoints.
         * *Summary (2025-04-03):* Created `api/routes/auth_routes.py`.
     * [X] **Refactor User Fetching:** Replaced `current_user.get_user()` with `get_current_user_object()` helper in relevant route files.
-        * *Summary (2025-04-05):* Updated `lease_routes.py` and `payment_routes.py`. (Note: Further checks needed in other route files).
+        * *Summary (2025-04-05):* Updated `lease_routes.py`, `payment_routes.py`, `auth_routes.py`. (Note: Further checks needed in other route files).
+    * [X] **Fix Exception Imports:** Updated all files importing `UnauthorizedException` to use `AuthorizationException`.
+        * *Summary (2025-04-11):* Corrected imports in `auth_helpers.py`, `decorators.py`, `property_service.py`, `user_service.py`, `auth_routes.py`, `user_routes.py`, `property_routes.py`, `chat_routes.py`, `chat_service.py`.
 - [ ] **Localization & Compliance Prep:**
     * [ ] **Bilingual Support Strategy:** Plan for handling English/French in backend models (if needed for content) and API responses.
     * [ ] **Data Privacy Review:** Review user/property data collection against Cameroon's Data Protection Law requirements. Document necessary consent flows.
@@ -145,28 +147,28 @@
 
 ## Phase 4: Core Property Management Tools
 
-- [P] **Digital Lease Management:** (Foundations Complete)
+- [X] **Digital Lease Management:** (Foundations Complete)
     * [X] **Backend (`api/`):** Defined `Lease`, `LeaseAgreementTemplate` models/schemas. Added relationships to `User`/`Property`. Generated migration. Implemented `LeaseService` (create, get). Created `lease_routes` (POST create, GET my-landlord/my-tenant). Registered blueprint.
-        * *Summary (2025-04-05):* Backend models, service, routes, migration for basic lease management created.
+        * *Summary (2025-04-11):* Backend models, service, routes, migration for basic lease management created.
     * [X] **Frontend (`frontend/`):** Created `ManageLeasesPage.jsx` (landlord view), `LeaseForm.jsx`. Added routes/nav link in `App.jsx`. Added `createLease`, `getMyLeasesAsLandlord`, `getMyLeasesAsTenant` to `apiService.jsx`.
-        * *Summary (2025-04-05):* Frontend pages, form, routing, and API calls for basic lease management created.
-- [P] **Tenant Management (Basic):** (Foundations Complete via Lease)
+        * *Summary (2025-04-11):* Frontend pages, form, routing, and API calls for basic lease management created.
+- [X] **Tenant Management (Basic):** (Foundations Complete via Lease)
     * [X] **Backend (`api/`):** Link established via `Lease` model relationships.
-        * *Summary (2025-04-05):* Tenant/Landlord linked through Lease model.
+        * *Summary (2025-04-11):* Tenant/Landlord linked through Lease model.
     * [X] **Frontend (`frontend/`):** `ManageLeasesPage.jsx` displays tenant info. `DashboardPage.jsx` displays tenant's leases.
-        * *Summary (2025-04-05):* Basic display of tenant/landlord links implemented.
-- [P] **Rent Collection & Tracking:** (Foundations Complete)
+        * *Summary (2025-04-11):* Basic display of tenant/landlord links implemented.
+- [X] **Rent Collection & Tracking:** (Foundations Complete)
     * [X] **Backend (`api/`):** Defined `RentPayment` model/schemas. Added relationship to `Lease`. Generated migration. Implemented `PaymentService` (record manual, get for lease). Created `payment_routes` (POST record-manual, GET lease payments). Registered blueprint.
-        * *Summary (2025-04-05):* Backend model, service, routes, migration for basic rent tracking created.
+        * *Summary (2025-04-11):* Backend model, service, routes, migration for basic rent tracking created.
     * [X] **Frontend (`frontend/`):** Enhanced `ManageLeasesPage.jsx` to show payment history and integrated `RecordPaymentModal.jsx`. Added `getLeasePayments`, `recordManualPayment` to `apiService.jsx`. Enhanced `DashboardPage.jsx` to show tenant leases.
-        * *Summary (2025-04-05):* Landlord view enhanced for payment history/recording. Tenant dashboard shows leases.
+        * *Summary (2025-04-11):* Landlord view enhanced for payment history/recording. Tenant dashboard shows leases.
     * [ ] **Mobile Money Integration:** Research Cameroon mobile money APIs (MTN MoMo, Orange Money) for payment initiation and/or status checking. Implement service methods. Requires API credentials/partnership.
     * [ ] **Automated Reminders (Basic):** Implement backend logic (scheduled task?) to generate notifications (Phase 6) or update payment status to OVERDUE.
-- [P] **Maintenance Request Management:** (Foundations Complete)
+- [X] **Maintenance Request Management:** (Foundations Complete)
     * [X] **Backend (`api/`):** Defined `MaintenanceRequest` model/schemas. Added relationships to `User`/`Property`. Generated migration. Implemented `MaintenanceService` (create, get submitted/assigned, update status). Created `maintenance_routes` (POST submit, GET my-submitted/my-assigned, PUT update status). Registered blueprint.
-        * *Summary (2025-04-05):* Backend model, service, routes, migration for maintenance requests created.
+        * *Summary (2025-04-11):* Backend model, service, routes, migration for maintenance requests created.
     * [X] **Frontend (`frontend/`):** Created `SubmitMaintenanceRequestPage.jsx` (tenant form), `MaintenanceDashboardPage.jsx` (landlord view). Added routes/nav link in `App.jsx`. Added `submitMaintenanceRequest`, `getMySubmittedMaintenanceRequests`, `getMyAssignedMaintenanceRequests`, `updateMaintenanceRequestStatus` to `apiService.jsx`. Enhanced `DashboardPage.jsx` to show submitted requests.
-        * *Summary (2025-04-05):* Frontend pages, routing, and API calls for submitting/viewing/managing maintenance requests created.
+        * *Summary (2025-04-11):* Frontend pages, routing, and API calls for submitting/viewing/managing maintenance requests created.
 
 ## Phase 5: Communication Features (Existing Chat)
 
@@ -215,3 +217,5 @@
     * *Summary (2025-04-04):* Multiple UI/UX and config issues addressed.
 - [X] **Backend Refactoring & Fixes:** Centralized auth helper, fixed local/Azure file upload corruption.
     * *Summary (2025-04-04):* Code quality improvements and bug fixes implemented.
+- [X] **Fix Frontend Build/Runtime Errors:** Resolved issues related to CSS imports, duplicate function keys, and AuthContext usage after Phase 4 implementation.
+    * *Summary (2025-04-11):* Corrected CSS paths, removed duplicate function in apiService.jsx, created missing Modal.css, fixed AuthContext import/usage.

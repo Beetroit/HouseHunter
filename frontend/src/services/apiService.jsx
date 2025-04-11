@@ -729,26 +729,6 @@ const apiService = {
         }
     },
 
-
-    /**
-     * Updates the status or notes of a maintenance request.
-     * @param {string} requestId - The UUID of the request to update.
-     * @param {object} updateData - Data matching MaintenanceRequestUpdate schema ({ status?, resolution_notes? }).
-     * @returns {Promise<object>} - The updated request data (MaintenanceRequestResponse schema).
-     */
-    updateMaintenanceRequestStatus: async (requestId, updateData) => {
-        console.log(`Updating maintenance request ${requestId} with:`, updateData);
-        try {
-            const response = await apiClient.put(`/maintenance/requests/${requestId}`, updateData);
-            console.log('Update maintenance request response:', response.data);
-            return response.data; // Should be MaintenanceRequestResponse
-        } catch (error) {
-            console.error(`Update Maintenance Request API error (ID: ${requestId}):`, error.response?.data || error.message);
-            throw new Error(error.response?.data?.message || 'Failed to update maintenance request');
-        }
-    },
-
-
     /**
      * Fetches maintenance requests assigned to the current user (landlord/agent).
      * @returns {Promise<Array<object>>} - An array of request objects (MaintenanceRequestResponse schema).

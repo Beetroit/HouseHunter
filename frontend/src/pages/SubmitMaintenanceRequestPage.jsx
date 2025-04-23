@@ -1,8 +1,9 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/apiService';
 import './FormStyles.css'; // Reuse form styles
+
 
 function SubmitMaintenanceRequestPage() {
     const [formData, setFormData] = useState({
@@ -16,7 +17,7 @@ function SubmitMaintenanceRequestPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { user } = useContext(AuthContext); // Get current user
+    const { user } = useAuth(); // Get current user
 
     // Fetch active leases for the tenant to allow property selection
     useEffect(() => {

@@ -70,6 +70,7 @@ const AgentOrAdminRoute = ({ children }) => {
 function App() {
     // This line should already be present from previous attempt, ensure it is.
     const { currentUser, logout } = useAuth();
+    console.log('App component rendered. Location:', window.location.pathname, 'CurrentUser:', currentUser); // Added log
     const { t } = useTranslation(); // Get the translation function
     // Basic layout with navigation and routing
     return (

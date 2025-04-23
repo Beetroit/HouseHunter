@@ -1,4 +1,5 @@
 import axios from 'axios';
+import history from '../utils/history';
 
 // Determine the base URL for the API
 // Use environment variable if available, otherwise default to localhost:5000
@@ -16,6 +17,22 @@ const apiClient = axios.create({
     },
     withCredentials: true, // Important for sending/receiving cookies (like auth session)
 });
+
+// Add a response interceptor
+apiClient.interceptors.response.use(
+    response => response, // If the response is successful, just return it
+    error => {
+        // If the error response status is 401 and not already on the login page
+        if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+            console.warn('401 Unauthorized response received. Redirecting to login.');
+            console.log('Attempting redirect to:', '/login'); // Added log
+            // Redirect to the login page
+            history.push('/login');
+        }
+        // Re-throw the error so that individual catch blocks can still handle it
+        return Promise.reject(error);
+    }
+);
 
 // --- API Service Functions ---
 
@@ -77,9 +94,6 @@ const apiService = {
         } catch (error) {
             console.error('Get Current User API error:', error.response?.data || error.message);
             // Don't throw an error for 401 (not logged in), just return null or handle appropriately
-            if (error.response?.status === 401) {
-                return null; // Or indicate not authenticated
-            }
             throw new Error(error.response?.data?.detail || 'Failed to fetch user details');
         }
     },

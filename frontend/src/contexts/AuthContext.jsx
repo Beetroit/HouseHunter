@@ -7,6 +7,7 @@ const AuthContext = createContext(null);
 // 2. Create the Provider Component
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
+    console.log('AuthProvider rendered. Initial currentUser:', currentUser); // Added log
     const [isLoading, setIsLoading] = useState(true); // Start loading until we check session
 
     // Function to check the current session on initial load
@@ -16,6 +17,7 @@ export const AuthProvider = ({ children }) => {
             const user = await apiService.getCurrentUser();
             setCurrentUser(user); // user will be null if not authenticated
             console.log("Checked auth status, user:", user);
+            console.log('AuthProvider - currentUser after checkAuthStatus:', user); // Added log
         } catch (error) {
             console.error("Failed to fetch current user:", error);
             setCurrentUser(null); // Ensure user is null on error
@@ -35,11 +37,13 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await apiService.login(email, password);
             setCurrentUser(response.user); // Set user from login response
+            console.log('AuthProvider - currentUser after login:', response.user); // Added log
             setIsLoading(false);
             return response.user; // Return user data on success
         } catch (error) {
             setIsLoading(false);
             setCurrentUser(null); // Ensure user is null on failed login
+            console.log('AuthProvider - currentUser after failed login:', null); // Added log
             throw error; // Re-throw error to be caught in the component
         }
     };
@@ -69,10 +73,12 @@ export const AuthProvider = ({ children }) => {
         try {
             await apiService.logout();
             setCurrentUser(null);
+            console.log('AuthProvider - currentUser after logout:', null); // Added log
         } catch (error) {
             console.error("Logout failed:", error);
             // Optionally handle logout error, but usually clear state anyway
             setCurrentUser(null);
+            console.log('AuthProvider - currentUser after logout error:', null); // Added log
         } finally {
             setIsLoading(false);
         }

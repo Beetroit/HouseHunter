@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.jsx'; // Import useAuth
 import apiService from '../services/apiService.jsx';
 import './ListingStyles.css'; // Styles for listings, including the badge
 
 function HomePage() {
+    const { currentUser, isLoading: isAuthLoading } = useAuth(); // Get auth state
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -31,6 +33,26 @@ function HomePage() {
         fetchListings();
     }, [page]); // Dependency array includes page, so it re-runs when page changes
 
+    // Render loading state while auth status is being checked
+    if (isAuthLoading) {
+        return <div>Loading...</div>;
+    }
+
+    // Render message for logged-out users
+    if (!currentUser) {
+        return (
+            <div style={{ textAlign: 'center', marginTop: '50px' }}>
+                <h2>Welcome to HouseHunter!</h2>
+                <p>Find your perfect rental property.</p>
+                <p>Login to view available listings and unlock more features.</p>
+                <Link to="/login" style={{ fontSize: '1.2em', color: '#007bff', textDecoration: 'none' }}>
+                    Click here to Login
+                </Link>
+            </div>
+        );
+    }
+
+    // Render full content for logged-in users
     return (
         <div>
             <h2>Available Rentals</h2>

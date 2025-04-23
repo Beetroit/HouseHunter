@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'; // Import the useAuth hoo
 import './FormStyles.css'; // Create a shared CSS file for forms
 
 function LoginPage() {
+    console.log('LoginPage component rendered.'); // Added log
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');

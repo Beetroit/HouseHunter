@@ -19,15 +19,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import Base
 
+# Import Pydantic models needed at runtime for schema generation
+from .property import PropertyResponseSimple
+from .user import UserResponseSimple
+
 if TYPE_CHECKING:
-    from .property import (  # Import Property for relationship and simple response
-        Property,
-        PropertyResponseSimple,
-    )
-    from .user import (  # Import User for relationship and simple response
-        User,
-        UserResponseSimple,
-    )
+    # Keep imports needed only for type checking (like SQLAlchemy models for relationships)
+    from .property import Property
+    from .user import User
 
 
 class MaintenanceRequestStatus(str, Enum):

@@ -1,115 +1,111 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'; // Import useCallback
-import { Link } from 'react-router-dom'; // Import Link
-import RecordPaymentModal from '../components/RecordPaymentModal.jsx'; // Import the modal
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import RecordPaymentModal from '../components/RecordPaymentModal.jsx';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/apiService';
-import './AdminDashboard.css'; // Reuse AdminDashboard styles for now
-import './ManageLeasesPage.css'; // Add specific styles if needed
+import './AdminDashboard.css';
+import './ManageLeasesPage.css';
 
 function ManageLeasesPage() {
     const [leases, setLeases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const { user } = useAuth();
+    const { currentUser, isLoading: isAuthLoading } = useAuth();
 
-    // State for managing payment details display
-    const [selectedLeaseId, setSelectedLeaseId] = useState(null); // ID of the lease whose payments are shown
-    const [leasePayments, setLeasePayments] = useState({}); // Store payments keyed by leaseId
-    const [paymentsLoading, setPaymentsLoading] = useState({}); // Loading state per lease
-    const [paymentsError, setPaymentsError] = useState({}); // Error state per lease
+    const [selectedLeaseId, setSelectedLeaseId] = useState(null);
+    const [leasePayments, setLeasePayments] = useState({});
+    const [paymentsLoading, setPaymentsLoading] = useState({});
+    const [paymentsError, setPaymentsError] = useState({});
 
-    // State for Record Payment Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [leaseIdToRecordPayment, setLeaseIdToRecordPayment] = useState(null);
+
+    const fetchLeases = useCallback(async () => {
+        setLoading(true);
+        setError('');
+
+        if (!currentUser) {
+            setError('User not logged in.');
+            console.error('User not logged in.');
+            setLeases([]);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await apiService.getMyLeasesAsLandlord();
+            setLeases(response.data || []);
+        } catch (err) {
+            console.error("Error fetching leases:", err);
+            setError(err.response?.data?.message || 'Failed to fetch leases. Please try again.');
+            setLeases([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUser]); // Depend only on currentUser
+
     useEffect(() => {
-        const fetchLeases = async () => {
-            if (!user) {
-                setError('User not logged in.');
-                setLoading(false);
-                return;
-            }
-            setLoading(true);
-            setError('');
-            try {
-                // Assuming an endpoint exists to get leases for the current user (as landlord)
-                // We might need to create this endpoint and apiService function later
-                // For now, let's assume apiService.getMyLeasesAsLandlord() exists
-                const response = await apiService.getMyLeasesAsLandlord(); // Placeholder
-                setLeases(response.data || []); // Adjust based on actual API response structure
-            } catch (err) {
-                console.error("Error fetching leases:", err);
-                setError(err.response?.data?.message || 'Failed to fetch leases. Please try again.');
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!isAuthLoading) { // Only fetch leases once auth state is settled
+            fetchLeases();
+        }
+    }, [isAuthLoading, fetchLeases]); // Depend on isAuthLoading and the memoized fetchLeases
 
-        fetchLeases();
-    }, [user]); // Refetch leases if user changes
-
-    // Function to fetch and display payments for a specific lease
     const fetchAndShowPayments = useCallback(async (leaseId) => {
-        // If payments for this lease are already shown, hide them
         if (selectedLeaseId === leaseId) {
             setSelectedLeaseId(null);
             return;
         }
 
-        setSelectedLeaseId(leaseId); // Show loading/payment section for this lease
+        setSelectedLeaseId(leaseId);
         setPaymentsLoading(prev => ({ ...prev, [leaseId]: true }));
         setPaymentsError(prev => ({ ...prev, [leaseId]: '' }));
-        setLeasePayments(prev => ({ ...prev, [leaseId]: [] })); // Clear previous payments for this lease
+        setLeasePayments(prev => ({ ...prev, [leaseId]: [] }));
 
         try {
             const response = await apiService.getLeasePayments(leaseId);
-            setLeasePayments(prev => ({ ...prev, [leaseId]: response || [] })); // API returns the list directly
+            setLeasePayments(prev => ({ ...prev, [leaseId]: response || [] }));
         } catch (err) {
             console.error(`Error fetching payments for lease ${leaseId}:`, err);
             setPaymentsError(prev => ({ ...prev, [leaseId]: err.message || 'Failed to load payments.' }));
         } finally {
             setPaymentsLoading(prev => ({ ...prev, [leaseId]: false }));
         }
-    }, [selectedLeaseId]); // Dependency: selectedLeaseId to allow toggling
+    }, [selectedLeaseId]);
 
-    // Function to open the Record Payment modal
-    const handleOpenRecordPaymentModal = (leaseId) => {
+    const handleOpenRecordPaymentModal = useCallback((leaseId) => {
         setLeaseIdToRecordPayment(leaseId);
         setIsModalOpen(true);
-    };
+    }, []); // No dependencies needed
 
-    // Function to close the modal
-    const handleModalClose = () => {
+    const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
         setLeaseIdToRecordPayment(null);
-    };
+    }, []); // No dependencies needed
 
-    // Function called after successful payment recording
-    const handlePaymentSaveSuccess = (savedLeaseId) => {
+    const handlePaymentSaveSuccess = useCallback((savedLeaseId) => {
         handleModalClose();
-        // Refresh the payment list for the lease that was just updated
-        // Ensure payments are shown if they were already selected, or fetch if not
-        fetchAndShowPayments(savedLeaseId);
-        // Optionally add a success message/toast here
-    };
+        // Re-fetch payments for the saved lease if its payments were currently visible
+        if (selectedLeaseId === savedLeaseId) {
+            fetchAndShowPayments(savedLeaseId);
+        }
+    }, [handleModalClose, fetchAndShowPayments, selectedLeaseId]); // Depend on functions and state used
 
     return (
         <div className="dashboard-container">
             <h2>Manage Leases</h2>
 
-            {/* Add button/link to create a new lease */}
             <Link to="/leases/create" className="btn btn-primary mb-3">Create New Lease</Link>
 
             {loading && <p>Loading leases...</p>}
             {error && <p className="error-message">{error}</p>}
 
             {!loading && !error && (
-                <div className="listings-grid"> {/* Reuse listings grid style */}
+                <div className="listings-grid">
                     {leases.length === 0 ? (
                         <p>You have not created or managed any leases yet.</p>
                     ) : (
                         leases.map((lease) => (
-                            <div key={lease.id} className="listing-card"> {/* Reuse listing card style */}
-                                {/* TODO: Display more relevant lease info */}
+                            <div key={lease.id} className="listing-card">
                                 <h3>Property: {lease.property?.title || 'N/A'}</h3>
                                 <p>Tenant: {lease.tenant?.first_name || ''} {lease.tenant?.last_name || 'N/A'}</p>
                                 <p>Status: <span className={`status-badge status-${lease.status?.toLowerCase()}`}>{lease.status || 'N/A'}</span></p>
@@ -126,14 +122,12 @@ function ManageLeasesPage() {
                                     <button
                                         onClick={() => handleOpenRecordPaymentModal(lease.id)}
                                         className="btn btn-success btn-sm"
-                                        style={{ marginLeft: '10px' }} // Add some spacing
+                                        style={{ marginLeft: '10px' }}
                                     >
                                         Record Payment
                                     </button>
-                                    {/* Add Edit/Terminate buttons later */}
                                 </div>
 
-                                {/* Payment Details Section */}
                                 {selectedLeaseId === lease.id && (
                                     <div className="payment-details-section">
                                         <h4>Payment History</h4>
@@ -177,7 +171,6 @@ function ManageLeasesPage() {
                 </div>
             )}
 
-            {/* Render the modal */}
             <RecordPaymentModal
                 show={isModalOpen}
                 leaseId={leaseIdToRecordPayment}

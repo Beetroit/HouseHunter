@@ -9,7 +9,7 @@ function MaintenanceDashboardPage() {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const { user } = useAuth();
+    const { currentUser: user } = useAuth();
 
     const fetchAssignedRequests = useCallback(async () => {
         if (!user) {

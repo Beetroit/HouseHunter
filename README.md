@@ -1,6 +1,6 @@
-# HouseHunter
+# Ulo
 
-HouseHunter is a web application designed to connect renters with property listers and agents. It provides features for browsing property listings, user authentication, property management, agent verification, user profiles, reviews, and real-time chat between users.
+Ulo is a web application designed to connect renters with property listers and agents. It provides features for browsing property listings, user authentication, property management, agent verification, user profiles, reviews, and real-time chat between users.
 
 ## Core Technologies
 
@@ -55,7 +55,7 @@ HouseHunter is a web application designed to connect renters with property liste
         alembic upgrade head
         ```
 6.  **Run Backend Server:**
-    *   From the project root directory (`HouseHunter/`):
+    *   From the project root directory (`Ulo/`):
         ```bash
         hypercorn api.app:app --reload --bind 0.0.0.0:5000
         ```
